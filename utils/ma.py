@@ -2,33 +2,40 @@
 # multiplier = (smoothing / 1 + days)
 # smoothing = 2 or 3
 
-SMOOTHING = 3
+SMOOTHING = 2
+
 
 def calculate_sma(num_days, data):
     n = len(data)
-    sma = []
+    if n < num_days:
+        return []
+
+    sums = []
     i = 0
-    j = num_days - 1
+    j = num_days
+
+    initial_sum = sum(data[:num_days][4])
+    sums.append(initial_sum)
+
     while j < n:
-        sum = 0
-        for k in range(i, j + 1):
-            sum += data[k][4]
-        sma.append(sum / num_days)
-        i += 1
+        sums.append(sums[-1] + data[j][4] - data[i][4])
         j += 1
+        i += 1
+
+    sma = [round(s / num_days, 2) for s in sums]
     return sma
 
 
 def calculate_ema(num_days, data):
     ema = []
     n = len(data)
-    i = 0
-    j = num_days - 1
     multiplier = SMOOTHING / (1 + num_days)
-    while j < n:
-        for k in range(i, j + 1):
-            if k == 0:
-                ema_temp = data[k][4] * multiplier + calculate_sma(num_days, data)[-1] * (1 - multiplier)
-            else:
-                ema_temp = data[k][4] * multiplier + ema[k - 1] * (1 - multiplier)
-            ema.append(ema_temp)
+
+    sma = calculate_sma(num_days, data[:num_days][4])
+    ema.append(sma[0])
+
+    for i in range(num_days, n):
+        ema_temp = (data[i][4] * multiplier) + (ema[-1] * (1 - multiplier))
+        ema.append(ema_temp)
+
+    return ema
