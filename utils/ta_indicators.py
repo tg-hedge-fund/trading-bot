@@ -4,7 +4,12 @@
 
 from typing import List
 
-from utils.returns import calculate_simple_returns
+from utils.returns import (
+    calculate_avg_gain,
+    calculate_avg_loss,
+    calculate_simple_returns,
+    get_rsi_value,
+)
 
 SMOOTHING = 2
 
@@ -56,6 +61,23 @@ def rsi(num_days, data) -> List[float]:
     i = 0
     j = num_days
     rsi_values = []
+
+    gains = []
+    losses = []
+    for k in range(i, j):
+        returns = calculate_simple_returns(data[k][1], data[k][4])
+        if returns > 0:
+            gains.append(returns)
+            losses.append(0)
+        else:
+            losses.append(abs(returns))
+            gains.append(0)
+
+    avg_gain = calculate_avg_gain(gains)
+    avg_loss = calculate_avg_loss(losses)
+
+    rs = avg_gain / avg_loss
+    rsi_values.append(get_rsi_value(rs))
 
     while j < n:
         gain = []
