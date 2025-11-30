@@ -47,7 +47,7 @@ def calculate_ema(num_days, data):
 
     for i in range(num_days, n):
         ema_temp = (data[i][4] * multiplier) + (ema[-1] * (1 - multiplier))
-        ema.append(ema_temp)
+        ema.append(round(ema_temp, 2))
 
     return ema
 
