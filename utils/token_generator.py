@@ -1,15 +1,16 @@
-from growwapi import GrowwAPI
+from growwapi import GrowwAPI, GrowwFeed
 from pathlib import Path
 
 import pyotp
 
-from utils.app_config import extract_groww_keys
+from utils.app_config import extract_groww_keys, write_keys
 
 def generate_token():
   api_key, secret = extract_groww_keys()
   totp = pyotp.TOTP(secret).now()
 
   access_token = GrowwAPI.get_access_token(api_key, totp)
+  write_keys(api_key, secret, access_token)
   return api_key, secret, access_token
 
 
@@ -21,5 +22,6 @@ def get_access_token():
     ACCESS_TOKEN = lines[2].strip()
 
   GROWW = GrowwAPI(ACCESS_TOKEN)
+  FEED = GrowwFeed(ACCESS_TOKEN)
 
-  return ACCESS_TOKEN, GROWW
+  return ACCESS_TOKEN, GROWW, FEED

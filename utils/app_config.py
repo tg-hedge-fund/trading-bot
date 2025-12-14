@@ -17,3 +17,6 @@ def write_keys(api_key, secret, access_token):
   secret_file = Path.home() / ".growwSecretKey"
   with open(secret_file, "w") as f:
     f.write(f"{api_key}\n{secret}\n{access_token}")
+
+
+
