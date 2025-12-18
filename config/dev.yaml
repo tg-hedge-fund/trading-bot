@@ -1,6 +1,11 @@
 db:
   name: postgres
   username: thundergod
-  password: password123
+  password: ENC(1kbI7+9ffycWCTBnvSd4Xw==:MtCRwMnSnK/x34jMH6rKYg==)
   host: localhost
   port: 5432
+  api:
+    key:
+      groww: "hello"
+
+username: prathmesh

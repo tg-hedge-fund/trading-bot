@@ -2,7 +2,7 @@ from api.historical_data import get_historical_data
 from api.portfolio import get_portfolio
 
 from utils.app_config import extract_groww_keys
-from utils.ta_indicators import calculate_ema, calculate_sma
+from trade_utils.ta_indicators import calculate_ema, calculate_sma
 from utils.token_generator import generate_token, get_access_token
 
 import pandas as pd
