@@ -22,6 +22,7 @@ def get_access_token():
     ACCESS_TOKEN = lines[2].strip()
 
   GROWW = GrowwAPI(ACCESS_TOKEN)
-  FEED = GrowwFeed(ACCESS_TOKEN)
+  # FEED = GrowwFeed(ACCESS_TOKEN)
+  FEED = None
 
   return ACCESS_TOKEN, GROWW, FEED

@@ -1,7 +1,6 @@
 import psycopg2
 from utils.config_reader import ConfigReader
-
-
+from utils.app_config import decrypt
 class PGConnector:
     def __init__(self):
         self.config = ConfigReader()

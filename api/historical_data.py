@@ -2,7 +2,7 @@
 
 from utils.token_generator import get_access_token
 
-API_AUTH_TOKEN, GROWW = get_access_token()
+ACCESS_TOKEN, GROWW, FEED = get_access_token()
 
 def get_historical_data(start_time, end_time, groww_symbol, exchange, segment, candle_interval):
   historical_data_response = GROWW.get_historical_candles(

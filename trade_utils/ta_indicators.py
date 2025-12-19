@@ -4,7 +4,7 @@
 
 from typing import List
 
-from utils.returns import (
+from trade_utils.returns import (
     calculate_avg_gain,
     calculate_avg_loss,
     calculate_simple_returns,
