@@ -1,3 +1,6 @@
+from api.portfolio import get_portfolio
+
+
 def get_portfolio_holdings():
   HOLDINGS_LIST = []
   holdings = get_portfolio()
