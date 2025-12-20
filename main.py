@@ -10,4 +10,4 @@ import pandas as pd
 
 ACCESS_TOKEN, GROWW, FEED = get_access_token()
 
-save_instrument_idx()
+save_instrument_eq()

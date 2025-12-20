@@ -1,6 +1,6 @@
 db:
   name: postgres
-  username: thundergod
+  username: postgres
   password: ENC(1kbI7+9ffycWCTBnvSd4Xw==:MtCRwMnSnK/x34jMH6rKYg==)
-  host: localhost
+  host: 127.0.0.1
   port: 5432

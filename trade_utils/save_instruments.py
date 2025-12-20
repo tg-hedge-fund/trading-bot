@@ -1,5 +1,8 @@
+from time import sleep
 import psycopg2
 import pandas as pd
+import numpy as np
+from datetime import datetime
 from utils.config_reader import ConfigReader
 from utils.db_connector import PGConnector
 from utils.token_generator import get_access_token
@@ -10,16 +13,43 @@ config = ConfigReader()
 db = PGConnector()
 conn, cursor = db.get_db_conn_cursor()
 
+def _cast_value(value, data_type):
+    """Cast and handle NaN/None values for database insertion"""
+    if pd.isna(value) or value == 'NaN':
+        return None
+    
+    if data_type == 'date':
+        try:
+            if isinstance(value, str):
+                return datetime.strptime(value, '%Y-%m-%d').date() if value else None
+            else:
+                return value
+        except:
+            return None
+    elif data_type in ('bigint', 'int'):
+        try:
+            return int(value) if pd.notna(value) and value != 'NaN' else None
+        except:
+            return None
+    elif data_type == 'float':
+        try:
+            return float(value) if pd.notna(value) and value != 'NaN' else None
+        except:
+            return None
+    else:  # varchar
+        return str(value) if pd.notna(value) and value != 'NaN' else None
+
 def save_instrument_eq():
-    instrument_eq = pd.read_csv("../instrument/instrument_eq.csv")
-    try:
-        for i, instrument in instrument_eq.iterrows():
+    instrument_eq = pd.read_csv("~/work/quant-trading/trading-bot/instrument/instrument_eq.csv")
+    for i, instrument in instrument_eq.iterrows():
+        try:
             #save the instrument along with their market_cap (get via api call)
             market_cap = GROWW.get_quote(
                 exchange=GROWW.EXCHANGE_NSE,
                 segment=GROWW.SEGMENT_CASH,
                 trading_symbol=instrument["trading_symbol"]
             )["market_cap"]
+            sleep(0.5)  # To avoid hitting API rate limits
             
             cursor.execute(
                 """
@@ -55,40 +85,39 @@ def save_instrument_eq():
                     market_cap = EXCLUDED.market_cap
                 """,
                 (
-                    instrument["exchange"],
-                    instrument["exchange_token"],
-                    instrument["trading_symbol"],
-                    instrument["groww_symbol"],
-                    instrument["name"],
-                    instrument["instrument_type"],
-                    instrument["segment"],
-                    instrument["series"],
-                    instrument["isin"],
-                    instrument["underlying_symbol"],
-                    instrument["underlying_exchange_token"],
-                    instrument["expiry_date"],
-                    instrument["strike_price"],
-                    instrument["lot_size"],
-                    instrument["tick_size"],
-                    instrument["freeze_quantity"],
-                    instrument["is_reserved"],
-                    instrument["buy_allowed"],
-                    instrument["sell_allowed"],
-                    instrument["internal_trading_symbol"],
-                    instrument["is_intraday"],
-                    instrument["market_cap"]
+                    _cast_value(instrument["exchange"], 'varchar'),
+                    _cast_value(instrument["exchange_token"], 'varchar'),
+                    _cast_value(instrument["trading_symbol"], 'varchar'),
+                    _cast_value(instrument["groww_symbol"], 'varchar'),
+                    _cast_value(instrument["name"], 'varchar'),
+                    _cast_value(instrument["instrument_type"], 'varchar'),
+                    _cast_value(instrument["segment"], 'varchar'),
+                    _cast_value(instrument["series"], 'varchar'),
+                    _cast_value(instrument["isin"], 'varchar'),
+                    _cast_value(instrument["underlying_symbol"], 'varchar'),
+                    _cast_value(instrument["underlying_exchange_token"], 'bigint'),
+                    _cast_value(instrument["expiry_date"], 'date'),
+                    _cast_value(instrument["strike_price"], 'float'),
+                    _cast_value(instrument["lot_size"], 'bigint'),
+                    _cast_value(instrument["tick_size"], 'float'),
+                    _cast_value(instrument["freeze_quantity"], 'bigint'),
+                    _cast_value(instrument["is_reserved"], 'int'),
+                    _cast_value(instrument["buy_allowed"], 'int'),
+                    _cast_value(instrument["sell_allowed"], 'int'),
+                    _cast_value(instrument["internal_trading_symbol"], 'varchar'),
+                    _cast_value(instrument["is_intraday"], 'int'),
+                    _cast_value(market_cap, 'bigint')
                 )
             )
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        print(f"Error saving instruments: {str(e)}")
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print(f"Error saving instrument at row {i}: {str(e)}")
 
 def save_instrument_idx():
-    instrument_idx = pd.read_csv("../instrument/instrument_idx.csv")
-    try:
-        for i, instrument in instrument_idx.iterrows():
-            #save the instrument along with their market_cap (get via api call)
+    instrument_idx = pd.read_csv("~/work/quant-trading/trading-bot/instrument/instrument_idx.csv")
+    for i, instrument in instrument_idx.iterrows():
+        try:
             cursor.execute(
                 """
                 INSERT INTO instrument_idx (
@@ -119,33 +148,33 @@ def save_instrument_idx():
                     buy_allowed = EXCLUDED.buy_allowed,
                     sell_allowed = EXCLUDED.sell_allowed,
                     internal_trading_symbol = EXCLUDED.internal_trading_symbol,
-                    is_intraday = EXCLUDED.is_intraday,
+                    is_intraday = EXCLUDED.is_intraday
                 """,
                 (
-                    instrument["exchange"],
-                    instrument["exchange_token"],
-                    instrument["trading_symbol"],
-                    instrument["groww_symbol"],
-                    instrument["name"],
-                    instrument["instrument_type"],
-                    instrument["segment"],
-                    instrument["series"],
-                    instrument["isin"],
-                    instrument["underlying_symbol"],
-                    instrument["underlying_exchange_token"],
-                    instrument["expiry_date"],
-                    instrument["strike_price"],
-                    instrument["lot_size"],
-                    instrument["tick_size"],
-                    instrument["freeze_quantity"],
-                    instrument["is_reserved"],
-                    instrument["buy_allowed"],
-                    instrument["sell_allowed"],
-                    instrument["internal_trading_symbol"],
-                    instrument["is_intraday"]
+                    _cast_value(instrument["exchange"], 'varchar'),
+                    _cast_value(instrument["exchange_token"], 'varchar'),
+                    _cast_value(instrument["trading_symbol"], 'varchar'),
+                    _cast_value(instrument["groww_symbol"], 'varchar'),
+                    _cast_value(instrument["name"], 'varchar'),
+                    _cast_value(instrument["instrument_type"], 'varchar'),
+                    _cast_value(instrument["segment"], 'varchar'),
+                    _cast_value(instrument["series"], 'varchar'),
+                    _cast_value(instrument["isin"], 'varchar'),
+                    _cast_value(instrument["underlying_symbol"], 'varchar'),
+                    _cast_value(instrument["underlying_exchange_token"], 'bigint'),
+                    _cast_value(instrument["expiry_date"], 'date'),
+                    _cast_value(instrument["strike_price"], 'float'),
+                    _cast_value(instrument["lot_size"], 'bigint'),
+                    _cast_value(instrument["tick_size"], 'float'),
+                    _cast_value(instrument["freeze_quantity"], 'bigint'),
+                    _cast_value(instrument["is_reserved"], 'int'),
+                    _cast_value(instrument["buy_allowed"], 'int'),
+                    _cast_value(instrument["sell_allowed"], 'int'),
+                    _cast_value(instrument["internal_trading_symbol"], 'varchar'),
+                    _cast_value(instrument["is_intraday"], 'int')
                 )
             )
-        conn.commit()
-    except Exception as e:
-        conn.rollback()
-        print(f"Error saving instruments: {str(e)}")
+            conn.commit()
+        except Exception as e:
+            conn.rollback()
+            print(f"Error saving instrument at row {i}: {str(e)}")
