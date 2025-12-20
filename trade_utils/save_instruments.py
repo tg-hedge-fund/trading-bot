@@ -44,12 +44,16 @@ def save_instrument_eq():
     for i, instrument in instrument_eq.iterrows():
         try:
             #save the instrument along with their market_cap (get via api call)
-            market_cap = GROWW.get_quote(
-                exchange=GROWW.EXCHANGE_NSE,
-                segment=GROWW.SEGMENT_CASH,
-                trading_symbol=instrument["trading_symbol"]
-            )["market_cap"]
-            sleep(0.5)  # To avoid hitting API rate limits
+            try:
+                market_cap = GROWW.get_quote(
+                    exchange=GROWW.EXCHANGE_NSE,
+                    segment=GROWW.SEGMENT_CASH,
+                    trading_symbol=instrument["trading_symbol"]
+                )["market_cap"]
+            except Exception as e:
+                market_cap = None
+            
+            sleep(0.1)  # To avoid hitting API rate limits
             
             cursor.execute(
                 """
