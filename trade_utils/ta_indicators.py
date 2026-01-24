@@ -51,15 +51,12 @@ def calculate_ema(num_days, data):
 
     return ema
 
-def calculate_ema_crossover(ema_50, ema_100):
-    starting_point = len(ema_50) - len(ema_100)
-    ema_crossover = [(ema_50[starting_point + i], ema_100[i]) for i in range(len(ema_100))]
+def calculate_ema_crossover(ema_short, ema_long):
+    # ema_short and ema_long are arrays with the respective ema values
+    starting_point = len(ema_short) - len(ema_long)
+    ema_crossover = [(ema_short[starting_point + i], ema_long[i]) for i in range(len(ema_long))]
 
-    for i in range(len(ema_crossover)):
-        if ema_crossover[i][0] > ema_crossover[i][1]:
-            print("50 EMA is above 100 EMA")
-        else:
-            print("100 EMA is above 50 EMA")
+    return ema_crossover
 
 
 def rsi(num_days, data) -> List[float]:
