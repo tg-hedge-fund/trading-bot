@@ -1,0 +1,8 @@
+pandas
+schedule
+numpy
+cryptography
+growwapi
+pyotp
+psycopg2-binary
+python-dotenv
