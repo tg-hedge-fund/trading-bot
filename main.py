@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import time
 from threading import Thread
@@ -36,13 +37,34 @@ def scheduled_jobs_instrument(run_arg):
 def run_discord_bot_async():
     intents = discord.Intents.default()
     intents.message_content = True
-    bot = commands.Bot(command_prefix='!', intents=intents)
-    
-    discord_client = DiscordClient(intents = intents)
-    discord_client.run(str(TOKEN))
-    channel = bot.get_channel(1466891875691659427)
-    result = discord_client.send_message(channel, "Hello")
-    print(result)
+
+    discord_client = DiscordClient(intents=intents)
+
+    # Run bot in background thread
+    bot_thread = Thread(target=discord_client.run, args=(str(TOKEN),), daemon=True)
+    bot_thread.start()
+
+    # Wait for the client to be ready
+    timeout = 30
+    for i in range(timeout * 10):
+        if discord_client.is_ready():
+            break
+        time.sleep(0.1)
+
+    if discord_client.is_ready():
+        # Get the channel and send message
+        channel = discord_client.get_channel(1466891875691659427)
+        if channel:
+            # Use asyncio to run the async send_message on the bot's event loop
+            asyncio.run_coroutine_threadsafe(
+                discord_client.send_message(channel, "Hello"),
+                discord_client.loop
+            )
+            print("Message sent")
+        else:
+            print("Channel not found")
+    else:
+        print("Bot failed to connect")
 
 if __name__ == "__main__":
     # schedule.every().monday.at("09:16").do(scheduled_jobs_instrument, "EQ")
