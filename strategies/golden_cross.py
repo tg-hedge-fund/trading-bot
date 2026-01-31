@@ -18,12 +18,10 @@ ema_100 = calculate_ema(100, data)
 
 crossover_50_100 = calculate_ema_crossover(ema_50, ema_100)
 
-discord_client = DiscordClient()
-
 for i in range(len(crossover_50_100)):
   if crossover_50_100[i][0] > crossover_50_100[i][1]:
     #send message via discord bot that 50 ema has crossed 100 ema
-    message_sent = discord_client.send_message("EMA50 above EMA100 for stock")
+    message_sent = 
   else:
     #send message via discord bot that 50 ema has broken below 100 ema
     pass
