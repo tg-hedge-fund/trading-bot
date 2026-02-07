@@ -13,7 +13,7 @@ from api.portfolio import get_portfolio
 from trade_utils.save_instruments import save_instrument_eq, save_instrument_idx
 from trade_utils.ta_indicators import calculate_ema, calculate_sma
 from utils.app_config import extract_groww_keys
-from utils.discord_bot import TOKEN, DiscordClient
+from utils.discord_bot import TOKEN, DiscordClient, send_message_via_discord_bot
 from utils.token_generator import generate_token, get_access_token
 
 # ACCESS_TOKEN, GROWW, FEED = get_access_token()
@@ -35,12 +35,10 @@ def scheduled_jobs_instrument(run_arg):
             save_instrument_idx_thread.start()
 
 async def run_discord_bot():
-    intents = discord.Intents.default()
-    intents.message_content = True
-    discord_client = DiscordClient(intents=intents)
-
-    await discord_client.wait_until_ready()
-    await discord_client.send_message("Hello from main.py")
+    for i in range(10):
+        await send_message_via_discord_bot(f"message number: {i}")
+        await asyncio.sleep(1)
+        
 
 
 
