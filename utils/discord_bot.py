@@ -37,19 +37,21 @@ DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
 #                 print("Failed in init of asynio event loop")
 
 class DiscordClient(discord.Client):
-    _instance = None
-    _initialized = False
+    # _instance = None
+    # _initialized = False
 
-    def __new__(cls):
-        if cls._instance is None:
-          cls._instance = super().__new__(cls)
-        return cls._instance
+    # def __new__(cls):
+    #     if cls._instance is None:
+    #       cls._instance = super().__new__(cls)
+    #     return cls._instance
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self._ready_event = asyncio.Event()
 
     async def on_ready(self):
         logger.info(f'We have logged in as {self.user}')
+        self._ready_event.set()
 
     async def on_message(self, message):
         if message.author == self.user:
@@ -59,7 +61,6 @@ class DiscordClient(discord.Client):
             await message.channel.send('Hello!')
 
     async def send_message(self, message):
-        await self.wait_until_ready()
         logger.info(f"send_message called with: {message}")
 
         if self.is_ready():
@@ -79,29 +80,71 @@ class DiscordClient(discord.Client):
 
 
 _bot_instance = None
+_bot_task = None
 
 async def start_discord_bot_instance():
-    global _bot_instance
-    
-    if _bot_instance is not None:
+    global _bot_instance, _bot_task
+
+    # Check if bot is already running and connected
+    if _bot_instance is not None and not _bot_instance.is_closed():
         logger.info("Discord Bot is already running!")
         return _bot_instance
-        
+
     intents = discord.Intents.default()
     intents.message_content = True
-    
+
     _bot_instance = DiscordClient(intents=intents)
-    
+
     # Start the bot in the background
-    asyncio.create_task(_bot_instance.start(str(TOKEN), reconnect=True))
-    logger.info("Discord bot starting...")
+    _bot_task = asyncio.create_task(_bot_instance.start(str(TOKEN), reconnect=True))
+
+    # Wait for the bot to be ready with a timeout
+    try:
+        await asyncio.wait_for(_bot_instance._ready_event.wait(), timeout=10.0)
+        logger.info("Discord bot is ready!")
+    except asyncio.TimeoutError:
+        logger.error("Discord bot failed to become ready within 10 seconds")
+        try:
+            await _bot_instance.close()
+        except Exception as e:
+            logger.error(f"Error closing bot: {e}")
+        _bot_instance = None
+        _bot_task = None
+        raise RuntimeError("Discord bot initialization timeout")
+    except Exception as e:
+        logger.error(f"Error waiting for bot to be ready: {e}", exc_info=True)
+        try:
+            await _bot_instance.close()
+        except Exception as close_error:
+            logger.error(f"Error closing bot: {close_error}")
+        _bot_instance = None
+        _bot_task = None
+        raise
+
     return _bot_instance
 
 async def send_message_via_discord_bot(message):
     """Send a message via the Discord bot"""
-    global _bot_instance
-    
-    if _bot_instance is None:
-        await start_discord_bot_instance()
-    
+    _bot_instance = await start_discord_bot_instance()
     await _bot_instance.send_message(message)
+
+async def stop_discord_bot():
+    """Gracefully stop the Discord bot"""
+    global _bot_instance, _bot_task
+
+    if _bot_instance is not None and not _bot_instance.is_closed():
+        try:
+            logger.info("Stopping Discord bot...")
+            await _bot_instance.close()
+            _bot_instance = None
+            if _bot_task is not None:
+                try:
+                    await asyncio.wait_for(_bot_task, timeout=5.0)
+                except asyncio.TimeoutError:
+                    logger.warning("Bot stop task timed out")
+                _bot_task = None
+            logger.info("Discord bot stopped")
+        except Exception as e:
+            logger.error(f"Error stopping bot: {e}", exc_info=True)
+
+
