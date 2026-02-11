@@ -4,3 +4,5 @@ db:
   password: ENC(1kbI7+9ffycWCTBnvSd4Xw==:MtCRwMnSnK/x34jMH6rKYg==)
   host: 127.0.0.1
   port: 5432
+
+schedule_thread: True

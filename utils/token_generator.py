@@ -1,15 +1,23 @@
-from growwapi import GrowwAPI, GrowwFeed
 from pathlib import Path
 
 import pyotp
+from growwapi import GrowwAPI, GrowwFeed
 
 from utils.app_config import extract_groww_keys, write_keys
+
 
 def generate_token():
   api_key, secret = extract_groww_keys()
   totp = pyotp.TOTP(secret).now()
-
-  access_token = GrowwAPI.get_access_token(api_key, totp)
+  access_token = ""
+  try:
+      access_token = GrowwAPI.get_access_token(api_key, totp)
+  except Exception:
+      RuntimeError("Error generating access token from Groww, trying again")
+      try:
+          access_token = GrowwAPI.get_access_token(api_key, totp)
+      except Exception:
+          RuntimeError("Error generating access token from Groww")
   write_keys(api_key, secret, access_token)
   return api_key, secret, access_token
 
