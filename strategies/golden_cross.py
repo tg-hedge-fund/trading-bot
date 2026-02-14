@@ -4,7 +4,6 @@
 # paper trading mode please
 # golden cross is lagging indicator, move has already happened before this indicator spots it
 
-import asyncio
 import time
 from datetime import datetime, timedelta
 
