@@ -1,0 +1,4 @@
+from strategies.golden_cross import get_historical_data_populated
+
+
+get_historical_data_populated()
