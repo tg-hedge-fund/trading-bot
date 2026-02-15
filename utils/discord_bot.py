@@ -17,37 +17,14 @@ load_dotenv(f".env.{ENV}")
 TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
 
-# class DiscordBot(discord.Client):
-#     user: discord.ClientUser
-#     _bot = None
-
-#     def __init__(self, *args, **kwargs):
-#         super().__init__(*args, **kwargs)
-
-#         if self._bot is None:
-#             try:
-#                 # use when bot is needed to reply to your commands
-#                 # self._bot = commands.Bot(command_prefix=command_prefix, description=description, intents=)
-#                 # self._bot = Thread(target=self._run_bot, daemon=True)
-#                 logger.info("Discord Bot is now online")
-#             except RuntimeError:
-#                 print("Failed in init of asynio event loop")
 
 class DiscordClient(discord.Client):
-    # Singleton pattern code
-    # _instance = None
-    # _initialized = False
-
-    # def __new__(cls):
-    #     if cls._instance is None:
-    #       cls._instance = super().__new__(cls)
-    #     return cls._instance
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self._ready_event = asyncio.Event()
         self._message_queue = asyncio.Queue()
         self._worker_task = None
+        self._closing = False
 
     async def on_ready(self):
         logger.info(f'We have logged in as {self.user}')
@@ -62,30 +39,34 @@ class DiscordClient(discord.Client):
         if message.content.startswith('$hello'):
             await message.channel.send('Hello!')
 
-
     async def _message_worker(self):
         logger.info("Message worker started")
 
-        while True:
+        while not self._closing:
             try:
-                message = await self._message_queue.get()
+                try:
+                    message = await asyncio.wait_for(self._message_queue.get(), timeout=1.0)
+                except asyncio.TimeoutError:
+                    # No message received, continue waiting
+                    continue
 
                 if message is None:  # Shutdown signal
                     logger.info("Message worker shutting down")
                     break
 
                 await self._send_message_via_discord(message)
-                await asyncio.sleep(1)
+                await asyncio.sleep(0.5)
 
+            except asyncio.CancelledError:
+                logger.info("Message worker was cancelled")
+                break
             except Exception as e:
                 logger.error(f"Error in message worker: {e}", exc_info=True)
-
-
 
     async def _send_message_via_discord(self, message):
         logger.info(f"send_message called with: {message}")
 
-        if self.is_ready():
+        if self.is_ready() and not self._closing:
             try:
                 CHANNEL_ID = int(str(DISCORD_CHANNEL_ID))
                 channel = self.get_channel(CHANNEL_ID)
@@ -98,22 +79,45 @@ class DiscordClient(discord.Client):
             except Exception as e:
                 logger.error(f"Error sending message: {e}", exc_info=True)
         else:
-            logger.error("Client isn't ready")
+            if self._closing:
+                logger.warning("Cannot send message - client is closing")
+            else:
+                logger.error("Client isn't ready")
 
     def queue_message(self, message):
-        self._message_queue.put_nowait(message)
+        """Queue a message to be sent via Discord"""
+        if not self._closing:
+            try:
+                self._message_queue.put_nowait(message)
+            except Exception as e:
+                logger.error(f"Error queueing message: {e}", exc_info=True)
 
     async def wait_for_queue_empty(self):
-        await self._message_queue.join()
+        """Wait for the message queue to be processed"""
+        try:
+            await asyncio.wait_for(self._message_queue.join(), timeout=5.0)
+        except asyncio.TimeoutError:
+            logger.warning("Message queue did not empty within timeout")
+        except Exception as e:
+            logger.error(f"Error waiting for queue: {e}", exc_info=True)
 
     async def shutdown_worker(self):
+        """Gracefully shutdown the message worker"""
+        self._closing = True
         if self._worker_task:
-            await self._message_queue.put(None)  # Send shutdown signal
             try:
-                await asyncio.wait_for(self._worker_task, timeout=10.0)
+                await self._message_queue.put(None)  # Send shutdown signal
+                await asyncio.wait_for(self._worker_task, timeout=5.0)
             except asyncio.TimeoutError:
-                logger.warning("Worker task did not stop in time")
+                logger.warning("Worker task did not stop in time, cancelling")
                 self._worker_task.cancel()
+                try:
+                    await self._worker_task
+                except asyncio.CancelledError:
+                    pass
+            except Exception as e:
+                logger.error(f"Error shutting down worker: {e}", exc_info=True)
+
 
 _bot_instance = None
 _bot_task = None
@@ -160,43 +164,78 @@ async def start_discord_bot_instance():
     return _bot_instance
 
 def send_message_via_discord_bot(message):
-    """Send a message via the Discord bot"""
     global _bot_instance
     if _bot_instance is None:
         logger.error("Bot isn't running")
     else:
-        _bot_instance.queue_message(message)
+        try:
+            _bot_instance.queue_message(message)
+        except RuntimeError as e:
+            if "Event loop is closed" in str(e):
+                logger.error("Event loop is closed, cannot send message")
+            else:
+                logger.error(f"Error sending message: {e}", exc_info=True)
+
 
 async def send_message_via_discord_bot_async(message):
-    """Send a message via the Discord bot"""
+    """Send a message via the Discord bot (async)"""
     global _bot_instance
     if _bot_instance is None:
         logger.error("Bot isn't running")
-        _bot_instance = await start_discord_bot_instance()
-    else:
+        try:
+            _bot_instance = await start_discord_bot_instance()
+        except Exception as e:
+            logger.error(f"Failed to start bot: {e}", exc_info=True)
+            return
+
+    try:
         _bot_instance.queue_message(message)
+    except RuntimeError as e:
+        if "Event loop is closed" in str(e):
+            logger.error("Event loop is closed, cannot send message")
+        else:
+            logger.error(f"Error sending message: {e}", exc_info=True)
+
 
 async def wait_for_empty_discord_message_queue():
     global _bot_instance
     if _bot_instance:
-        await _bot_instance.wait_for_queue_empty()
-        await _bot_instance.shutdown_worker()
+        try:
+            await _bot_instance.wait_for_queue_empty()
+            await _bot_instance.shutdown_worker()
+        except Exception as e:
+            logger.error(f"Error waiting for queue: {e}", exc_info=True)
+
 
 async def stop_discord_bot():
-    """Gracefully stop the Discord bot"""
     global _bot_instance, _bot_task
 
     if _bot_instance is not None and not _bot_instance.is_closed():
         try:
             logger.info("Stopping Discord bot...")
+
+            # First, shutdown the worker to process remaining messages
+            await _bot_instance.shutdown_worker()
+
+            # Then close the bot connection
             await _bot_instance.close()
             _bot_instance = None
+
+            # Wait for the bot task to complete
             if _bot_task is not None:
                 try:
                     await asyncio.wait_for(_bot_task, timeout=5.0)
                 except asyncio.TimeoutError:
                     logger.warning("Bot stop task timed out")
-                _bot_task = None
-            logger.info("Discord bot stopped")
+                except asyncio.CancelledError:
+                    logger.info("Bot task was cancelled")
+                except Exception as e:
+                    logger.error(f"Error waiting for bot task: {e}", exc_info=True)
+                finally:
+                    _bot_task = None
+
+            logger.info("Discord bot stopped successfully")
         except Exception as e:
             logger.error(f"Error stopping bot: {e}", exc_info=True)
+            _bot_instance = None
+            _bot_task = None
