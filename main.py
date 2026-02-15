@@ -92,7 +92,6 @@ def discord_bot_heartbeat():
 
 
 async def run_discord_bot():
-    """Start and maintain the Discord bot connection"""
     try:
         logger.info("Starting Discord bot")
         await start_discord_bot_instance()

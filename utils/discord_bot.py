@@ -24,7 +24,6 @@ class DiscordClient(discord.Client):
         self._ready_event = asyncio.Event()
         self._message_queue = asyncio.Queue()
         self._worker_task = None
-        self._closing = False
 
     async def on_ready(self):
         logger.info(f'We have logged in as {self.user}')
@@ -41,32 +40,24 @@ class DiscordClient(discord.Client):
 
     async def _message_worker(self):
         logger.info("Message worker started")
-
-        while not self._closing:
+        while True:
             try:
-                try:
-                    message = await asyncio.wait_for(self._message_queue.get(), timeout=1.0)
-                except asyncio.TimeoutError:
-                    # No message received, continue waiting
-                    continue
+                message = await self._message_queue.get()
 
-                if message is None:  # Shutdown signal
+                if message is None:
                     logger.info("Message worker shutting down")
                     break
 
                 await self._send_message_via_discord(message)
                 await asyncio.sleep(0.5)
 
-            except asyncio.CancelledError:
-                logger.info("Message worker was cancelled")
-                break
             except Exception as e:
                 logger.error(f"Error in message worker: {e}", exc_info=True)
 
     async def _send_message_via_discord(self, message):
         logger.info(f"send_message called with: {message}")
 
-        if self.is_ready() and not self._closing:
+        if self.is_ready():
             try:
                 CHANNEL_ID = int(str(DISCORD_CHANNEL_ID))
                 if message == 'HEARTBEAT':
@@ -81,31 +72,18 @@ class DiscordClient(discord.Client):
             except Exception as e:
                 logger.error(f"Error sending message: {e}", exc_info=True)
         else:
-            if self._closing:
-                logger.warning("Cannot send message - client is closing")
-            else:
-                logger.error("Client isn't ready")
+            logger.error("Client isn't ready")
 
     def queue_message(self, message):
-        """Queue a message to be sent via Discord"""
-        if not self._closing:
-            try:
-                self._message_queue.put_nowait(message)
-            except Exception as e:
-                logger.error(f"Error queueing message: {e}", exc_info=True)
+        self._message_queue.put_nowait(message)
 
     async def wait_for_queue_empty(self):
-        """Wait for the message queue to be processed"""
         try:
-            await asyncio.wait_for(self._message_queue.join(), timeout=5.0)
-        except asyncio.TimeoutError:
-            logger.warning("Message queue did not empty within timeout")
+            await self._message_queue.join()
         except Exception as e:
             logger.error(f"Error waiting for queue: {e}", exc_info=True)
 
     async def shutdown_worker(self):
-        """Gracefully shutdown the message worker"""
-        self._closing = True
         if self._worker_task:
             try:
                 await self._message_queue.put(None)  # Send shutdown signal
@@ -113,10 +91,6 @@ class DiscordClient(discord.Client):
             except asyncio.TimeoutError:
                 logger.warning("Worker task did not stop in time, cancelling")
                 self._worker_task.cancel()
-                try:
-                    await self._worker_task
-                except asyncio.CancelledError:
-                    pass
             except Exception as e:
                 logger.error(f"Error shutting down worker: {e}", exc_info=True)
 
@@ -170,13 +144,7 @@ def send_message_via_discord_bot(message):
     if _bot_instance is None:
         logger.error("Bot isn't running")
     else:
-        try:
-            _bot_instance.queue_message(message)
-        except RuntimeError as e:
-            if "Event loop is closed" in str(e):
-                logger.error("Event loop is closed, cannot send message")
-            else:
-                logger.error(f"Error sending message: {e}", exc_info=True)
+        _bot_instance.queue_message(message)
 
 
 async def send_message_via_discord_bot_async(message):
@@ -190,13 +158,7 @@ async def send_message_via_discord_bot_async(message):
             logger.error(f"Failed to start bot: {e}", exc_info=True)
             return
 
-    try:
-        _bot_instance.queue_message(message)
-    except RuntimeError as e:
-        if "Event loop is closed" in str(e):
-            logger.error("Event loop is closed, cannot send message")
-        else:
-            logger.error(f"Error sending message: {e}", exc_info=True)
+    _bot_instance.queue_message(message)
 
 
 async def wait_for_empty_discord_message_queue():
