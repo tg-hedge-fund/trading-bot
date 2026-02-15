@@ -151,14 +151,14 @@ if __name__ == "__main__":
             logger.info("Golden cross schedule thread started")
 
         if config.get("golden_cross_schedule"):
-            golden_cross_schedule_2 = Thread(
+            discord_bot_heartbeat_thread = Thread(
                 target=discord_bot_heartbeat,
-                name="golden_cross_schedule_2",
+                name="discord_bot_heartbeat_thread",
                 daemon=False
             )
-            threads.append(golden_cross_schedule_2)
-            golden_cross_schedule_2.start()
-            logger.info("Test schedule thread started")
+            threads.append(discord_bot_heartbeat_thread)
+            discord_bot_heartbeat_thread.start()
+            logger.info("discord bot heartbeat thread started")
 
         if not threads:
             logger.warning("No scheduler threads were configured to run")
