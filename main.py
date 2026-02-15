@@ -10,7 +10,11 @@ from strategies.golden_cross import (
     get_live_quote_by_hour,
 )
 from utils.config_reader import ConfigReader
-from utils.discord_bot import send_message_via_discord_bot, start_discord_bot_instance
+from utils.discord_bot import (
+    send_message_via_discord_bot,
+    start_discord_bot_instance,
+    stop_discord_bot,
+)
 from utils.jobs import (
     generate_token_every_morning_mtof,
     run_job_every_mon_fri,
@@ -30,7 +34,7 @@ logger = logging.getLogger(__name__)
 schedule_shutdown_event = Event()
 threads = []
 
-#schedules
+# schedules
 def run_instrument_and_token_schedule():
     try:
         logger.info("Starting instrument and token schedule thread")
@@ -46,6 +50,7 @@ def run_instrument_and_token_schedule():
         logger.info("Instrument and token schedule thread shutting down gracefully")
     except Exception as e:
         logger.error(f"Error in instrument and token schedule thread: {e}", exc_info=True)
+
 
 def run_golden_cross_schedule():
     try:
@@ -68,30 +73,37 @@ def run_golden_cross_schedule():
     except Exception as e:
         logger.error(f"Error in golden cross schedule thread: {e}", exc_info=True)
 
-def run_golden_cross_schedule_2():
+
+def discord_bot_heartbeat():
     def test_run():
-        send_message_via_discord_bot("test run")
+        send_message_via_discord_bot("HEARTBEAT")
 
     try:
-        logger.info("Starting Test Thread")
-        schedule.every().minute.do(test_run)
+        logger.info("Starting Heartbeat Thread")
+        schedule.every(60).seconds.do(test_run)
 
         while not schedule_shutdown_event.is_set():
             schedule.run_pending()
-            if schedule_shutdown_event.wait(60):
+            if schedule_shutdown_event.wait(5):
                 break
         logger.info("Golden cross schedule thread shutting down gracefully")
     except Exception as e:
         logger.error(f"Error in golden cross schedule thread: {e}", exc_info=True)
 
 
-def run_discord_bot():
-    """Run the Discord bot in its own event loop"""
+async def run_discord_bot():
     try:
         logger.info("Starting Discord bot")
-        asyncio.run(start_discord_bot_instance())
+        await start_discord_bot_instance()
+        # Keep the bot running until shutdown signal
+        while not schedule_shutdown_event.is_set():
+            await asyncio.sleep(1)
+        logger.info("Discord bot shutdown signal received")
     except Exception as e:
         logger.error(f"Error running Discord bot: {e}", exc_info=True)
+    finally:
+        logger.info("Closing Discord bot connection")
+        await stop_discord_bot()
 
 
 def shutdown_handler(signum, frame):
@@ -109,6 +121,7 @@ def wait_for_threads(timeout=30):
 
 
 if __name__ == "__main__":
+
     # Register signal handlers for graceful shutdown
     signal.signal(signal.SIGINT, shutdown_handler)
     signal.signal(signal.SIGTERM, shutdown_handler)
@@ -116,41 +129,43 @@ if __name__ == "__main__":
     logger.info("Starting Trading Bot Application")
 
     try:
-        # Start Discord bot in its own thread with its own event loop
-        discord_bot_thread = Thread(target=run_discord_bot, name="discord_bot")
-        discord_bot_thread.daemon = False
-        threads.append(discord_bot_thread)
-        discord_bot_thread.start()
-        logger.info("Discord bot thread started")
-
+        # Start scheduler threads first (before Discord bot)
         if config.get("instrument_and_token_schedule"):
-            instrument_and_token_schedule = Thread(target=run_instrument_and_token_schedule, name="instrument_and_token_schedule")
-            instrument_and_token_schedule.daemon = False
+            instrument_and_token_schedule = Thread(
+                target=run_instrument_and_token_schedule,
+                name="instrument_and_token_schedule",
+                daemon=False
+            )
             threads.append(instrument_and_token_schedule)
             instrument_and_token_schedule.start()
             logger.info("Instrument and token schedule thread started")
 
         if config.get("golden_cross_schedule"):
-            golden_cross_schedule = Thread(target=run_golden_cross_schedule, name="golden_cross_schedule")
-            golden_cross_schedule.daemon = False
+            golden_cross_schedule = Thread(
+                target=run_golden_cross_schedule,
+                name="golden_cross_schedule",
+                daemon=False
+            )
             threads.append(golden_cross_schedule)
             golden_cross_schedule.start()
             logger.info("Golden cross schedule thread started")
 
         if config.get("golden_cross_schedule"):
-            golden_cross_schedule_2 = Thread(target=run_golden_cross_schedule_2, name="golden_cross_schedule_2")
-            golden_cross_schedule_2.daemon = False
-            threads.append(golden_cross_schedule_2)
-            golden_cross_schedule_2.start()
-            logger.info("test schedule thread started")
+            discord_bot_heartbeat_thread = Thread(
+                target=discord_bot_heartbeat,
+                name="discord_bot_heartbeat_thread",
+                daemon=False
+            )
+            threads.append(discord_bot_heartbeat_thread)
+            discord_bot_heartbeat_thread.start()
+            logger.info("discord bot heartbeat thread started")
 
         if not threads:
             logger.warning("No scheduler threads were configured to run")
 
-        # Keep the main thread alive
-        while threads and any(t.is_alive() for t in threads):
-            for thread in threads:
-                thread.join(timeout=1)
+        # Run the Discord bot on the main event loop
+        # This will block until the bot is stopped via signal handler
+        asyncio.run(run_discord_bot())
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received")
