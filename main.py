@@ -34,7 +34,6 @@ logger = logging.getLogger(__name__)
 schedule_shutdown_event = Event()
 threads = []
 
-
 # schedules
 def run_instrument_and_token_schedule():
     try:
@@ -75,17 +74,17 @@ def run_golden_cross_schedule():
         logger.error(f"Error in golden cross schedule thread: {e}", exc_info=True)
 
 
-def run_golden_cross_schedule_2():
+def discord_bot_heartbeat():
     def test_run():
-        send_message_via_discord_bot("test run")
+        send_message_via_discord_bot("HEARTBEAT")
 
     try:
-        logger.info("Starting Test Thread")
-        schedule.every(10).seconds.do(test_run)
+        logger.info("Starting Heartbeat Thread")
+        schedule.every(60).seconds.do(test_run)
 
         while not schedule_shutdown_event.is_set():
             schedule.run_pending()
-            if schedule_shutdown_event.wait(60):
+            if schedule_shutdown_event.wait(5):
                 break
         logger.info("Golden cross schedule thread shutting down gracefully")
     except Exception as e:
@@ -154,7 +153,7 @@ if __name__ == "__main__":
 
         if config.get("golden_cross_schedule"):
             golden_cross_schedule_2 = Thread(
-                target=run_golden_cross_schedule_2,
+                target=discord_bot_heartbeat,
                 name="golden_cross_schedule_2",
                 daemon=False
             )

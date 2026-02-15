@@ -16,7 +16,7 @@ config = ConfigReader()
 load_dotenv(f".env.{ENV}")
 TOKEN = os.getenv("DISCORD_TOKEN")
 DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
-
+HEARTBEAT_DISCORD_CHANNEL_ID = os.getenv("DISCORD_HEARTBEAT_CHANNEL_ID")
 
 class DiscordClient(discord.Client):
     def __init__(self, *args, **kwargs):
@@ -69,6 +69,8 @@ class DiscordClient(discord.Client):
         if self.is_ready() and not self._closing:
             try:
                 CHANNEL_ID = int(str(DISCORD_CHANNEL_ID))
+                if message == 'HEARTBEAT':
+                    CHANNEL_ID = int(str(HEARTBEAT_DISCORD_CHANNEL_ID))
                 channel = self.get_channel(CHANNEL_ID)
                 if channel:
                     assert isinstance(channel, discord.abc.Messageable)
