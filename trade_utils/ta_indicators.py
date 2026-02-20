@@ -14,7 +14,7 @@ from trade_utils.returns import (
 SMOOTHING = 2
 
 
-def calculate_sma(num_days: int, data: List[List[float]]) -> List[float]:
+def calculate_sma(num_days, data):
     n = len(data)
     if n < num_days:
         return []
@@ -23,11 +23,11 @@ def calculate_sma(num_days: int, data: List[List[float]]) -> List[float]:
     i = 0
     j = num_days
 
-    initial_sum = sum(d[4] for d in data[:num_days])
+    initial_sum = sum(d for d in data[:num_days])
     sums.append(initial_sum)
 
     while j < n:
-        sums.append(sums[-1] + data[j][4] - data[i][4])
+        sums.append(sums[-1] + data[j] - data[i])
         j += 1
         i += 1
 
@@ -46,7 +46,7 @@ def calculate_ema(num_days, data):
     ema.append(sma[0])
 
     for i in range(num_days, n):
-        ema_temp = (data[i][4] * multiplier) + (ema[-1] * (1 - multiplier))
+        ema_temp = (data[i] * multiplier) + (ema[-1] * (1 - multiplier))
         ema.append(round(ema_temp, 2))
 
     return ema
@@ -59,7 +59,7 @@ def calculate_ema_crossover(ema_short, ema_long):
     return ema_crossover
 
 
-def rsi(num_days, data) -> List[float]:
+def rsi(num_days, data):
     # rs = avg. gain / avg. loss
     n = len(data)
     if n < num_days:

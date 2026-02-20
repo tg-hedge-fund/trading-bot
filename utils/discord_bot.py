@@ -1,17 +1,12 @@
 import asyncio
-import logging
 import os
 
 import discord
 from dotenv import load_dotenv
 
-from utils.config_reader import ConfigReader
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+from utils.utils import logger
 
 ENV = os.getenv("HF_ENV", "dev")
-config = ConfigReader()
 
 load_dotenv(f".env.{ENV}")
 TOKEN = os.getenv("DISCORD_TOKEN")

@@ -10,12 +10,13 @@ from api.historical_data import get_historical_data
 from api.live_data import stream_live_data_by_quote
 from trade_utils.ta_indicators import calculate_ema, calculate_ema_crossover
 from utils.discord_bot import send_message_via_discord_bot
+from utils.utils import logger
 
 ema_50 = []
 ema_100 = []
 
 list_of_stocks = ["NIFTY"]
-GROWW_SYMBOL = "NSE-NIFTY"
+GROWW_SYMBOL = "NIFTY"
 EXCHANGE = "NSE"
 CANDLE_INTERVAL = "1hour"
 SEGMENT = "CASH"
@@ -31,40 +32,35 @@ def get_historical_data_populated():
     end_time_formatted = end_time.strftime("%Y-%m-%d %H:%M:%S")
     start_time = end_time - timedelta(days=150) + timedelta(hours=1)
     start_time_formatted = start_time.strftime("%Y-%m-%d %H:%M:%S")
-    print(f"start_time: {start_time_formatted}, end_time: {end_time_formatted}")
-    historical_data = get_historical_data(start_time_formatted, end_time_formatted, GROWW_SYMBOL, EXCHANGE, SEGMENT, CANDLE_INTERVAL)
+    logger.info(f"start_time: {start_time_formatted}, end_time: {end_time_formatted}")
+    historical_data = get_historical_data(start_time_formatted, end_time_formatted, f"{EXCHANGE}-{GROWW_SYMBOL}", EXCHANGE, SEGMENT, CANDLE_INTERVAL)
     closing_prices_historical_data = [i[4] for i in historical_data["candles"]]
-    # print(closing_prices_historical_data)
-    print(historical_data)
+    print(closing_prices_historical_data[0])
     return closing_prices_historical_data
 
-async def get_live_quote_by_hour():
+def get_live_quote_by_hour():
     # global data, ema_data
     data = stream_live_data_by_quote(EXCHANGE, SEGMENT, GROWW_SYMBOL)
     last_traded_price_data = data["last_price"]
     closing_prices_historical_data = get_historical_data_populated()
     #set ema data here
-    ema_data = [closing_prices_historical_data + last_traded_price_data]
-
+    closing_prices_historical_data.append(last_traded_price_data)
+    ema_data = closing_prices_historical_data
+    print("ema_data", ema_data)
     current_time = datetime.now().time()
     market_start = datetime.strptime("09:15", "%H:%M").time()
     market_end = datetime.strptime("15:30", "%H:%M").time()
+    logger.info(f"Current Time: {current_time}, market_start: {market_start}, market_end: {market_end}")
 
     if market_start <= current_time <= market_end and ema_data:
         ema_50 = calculate_ema(50, ema_data)
         ema_100 = calculate_ema(100, ema_data)
-
+        logger.info("Calculating ema crossover")
         crossover_50_100 = calculate_ema_crossover(ema_50, ema_100)
         total_crossover_points = len(crossover_50_100)
-        # for i in range(len(crossover_50_100)):
-        #     if crossover_50_100[i][0] > crossover_50_100[i][1]:
-        #         send_message_via_discord_bot("50 ema has crossed 100 ema for NIFTY")
-        #     else:
-        #         send_message_via_discord_bot("50 ema has broken below 100 ema for NIFTY")
 
         if crossover_50_100[total_crossover_points-1][0] > crossover_50_100[total_crossover_points-1][1]:
             send_message_via_discord_bot(f"50 ema has crossed above 100 ema for {EXCHANGE} on {CANDLE_INTERVAL} chart")
         else:
-            send_message_via_discord_bot(f"50 ema has broken below 100 ema for NIFTY on {CANDLE_INTERVAL} chart")
+            send_message_via_discord_bot(f"50 ema has broken below 100 ema for {EXCHANGE} on {CANDLE_INTERVAL} chart")
     return ema_data
-

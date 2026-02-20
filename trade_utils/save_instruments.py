@@ -1,15 +1,11 @@
 from time import sleep
-import psycopg2
 import pandas as pd
-import numpy as np
 from datetime import datetime
-from utils.config_reader import ConfigReader
 from utils.db_connector import PGConnector
 from utils.token_generator import get_access_token
 
 ACCESS_TOKEN, GROWW, FEED = get_access_token()
 
-config = ConfigReader()
 db = PGConnector()
 conn, cursor = db.get_db_conn_cursor()
 
@@ -43,18 +39,16 @@ def save_instrument_eq():
     instrument_eq = pd.read_csv("~/work/quant-trading/trading-bot/instrument/instrument_eq.csv")
     for i, instrument in instrument_eq.iterrows():
         try:
-            #save the instrument along with their market_cap (get via api call)
-            try:
-                market_cap = GROWW.get_quote(
-                    exchange=GROWW.EXCHANGE_NSE,
-                    segment=GROWW.SEGMENT_CASH,
-                    trading_symbol=instrument["trading_symbol"]
-                )["market_cap"]
-            except Exception as e:
-                market_cap = None
-            
-            sleep(0.1)  # To avoid hitting API rate limits
-            
+            market_cap = GROWW.get_quote(
+                exchange=GROWW.EXCHANGE_NSE,
+                segment=GROWW.SEGMENT_CASH,
+                trading_symbol=str(instrument["trading_symbol"])
+            )["market_cap"]
+        except Exception as e:
+            market_cap = None
+        
+        sleep(0.1)
+        try:  
             cursor.execute(
                 """
                 INSERT INTO instrument_eq (

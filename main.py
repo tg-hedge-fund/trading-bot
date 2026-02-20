@@ -1,5 +1,4 @@
 import asyncio
-import logging
 import signal
 import sys
 from threading import Event, Thread
@@ -9,7 +8,6 @@ import schedule
 from strategies.golden_cross import (
     get_live_quote_by_hour,
 )
-from utils.config_reader import ConfigReader
 from utils.discord_bot import (
     send_message_via_discord_bot,
     start_discord_bot_instance,
@@ -20,15 +18,7 @@ from utils.jobs import (
     run_job_every_mon_fri,
     scheduled_jobs_instrument,
 )
-
-config = ConfigReader()
-
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(levelname)s - %(message)s'
-)
-logger = logging.getLogger(__name__)
+from utils.utils import config, logger
 
 # Global event for graceful shutdown
 schedule_shutdown_event = Event()
@@ -61,9 +51,8 @@ def run_golden_cross_schedule():
             schedule.every().__getattribute__(day).at("11:15").do(get_live_quote_by_hour)
             schedule.every().__getattribute__(day).at("12:15").do(get_live_quote_by_hour)
             schedule.every().__getattribute__(day).at("13:15").do(get_live_quote_by_hour)
-            schedule.every().__getattribute__(day).at("14:15").do(get_live_quote_by_hour)
+            schedule.every().__getattribute__(day).at("14:52").do(get_live_quote_by_hour)
             schedule.every().__getattribute__(day).at("15:15").do(get_live_quote_by_hour)
-            # schedule.every().__getattribute__(day).at("16:15").do(get_live_quote_by_hour)
 
         while not schedule_shutdown_event.is_set():
             schedule.run_pending()
