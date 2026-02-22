@@ -3,8 +3,7 @@ import os
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, HTTPException
 
-from api.historical_data import get_historical_data
-from api.live_data import stream_live_data_by_quote
+from groww_api_handlers import get_historical_data, stream_live_data_by_quote
 
 load_dotenv()
 
