@@ -1,9 +1,7 @@
 import os
-from datetime import datetime
-from typing import Optional
 
 from dotenv import load_dotenv
-from fastapi import APIRouter, FastAPI, Header, HTTPException, Query
+from fastapi import APIRouter, FastAPI, HTTPException
 
 from api.historical_data import get_historical_data
 from api.live_data import stream_live_data_by_quote
