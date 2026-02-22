@@ -4,6 +4,6 @@ db:
   password: password123
   host: localhost
   port: 5432
-    
-instrument_and_token_schedule: True
+
+instrument_and_token_schedule: False
 golden_cross_schedule: True
