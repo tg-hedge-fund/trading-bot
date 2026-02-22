@@ -6,7 +6,7 @@ from dotenv import load_dotenv
 
 from utils.utils import logger
 
-ENV = os.getenv("HF_ENV", "dev")
+ENV = os.getenv("TGHF_ENV", "dev")
 
 load_dotenv(f".env.{ENV}")
 TOKEN = os.getenv("DISCORD_TOKEN")

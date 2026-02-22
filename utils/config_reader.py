@@ -5,7 +5,7 @@ from utils.app_config import decrypt
 
 class ConfigReader:
     def __init__(self):
-        with open(f"config/{os.getenv('HF_ENV', 'dev')}.yaml", 'r') as file:
+        with open(f"config/{os.getenv('TGHF_ENV', 'dev')}.yaml", 'r') as file:
             self.config = yaml.safe_load(file)
 
     def get(self, key, default=None):

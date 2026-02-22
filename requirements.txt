@@ -7,3 +7,4 @@ pyotp
 psycopg2-binary
 python-dotenv
 fastapi[standard]
+discord.py
