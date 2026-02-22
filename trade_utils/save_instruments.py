@@ -1,6 +1,8 @@
-from time import sleep
-import pandas as pd
 from datetime import datetime
+from time import sleep
+
+import pandas as pd
+
 from utils.db_connector import PGConnector
 from utils.token_generator import get_access_token
 
@@ -13,7 +15,7 @@ def _cast_value(value, data_type):
     """Cast and handle NaN/None values for database insertion"""
     if pd.isna(value) or value == 'NaN':
         return None
-    
+
     if data_type == 'date':
         try:
             if isinstance(value, str):
@@ -36,7 +38,7 @@ def _cast_value(value, data_type):
         return str(value) if pd.notna(value) and value != 'NaN' else None
 
 def save_instrument_eq():
-    instrument_eq = pd.read_csv("~/work/quant-trading/trading-bot/instrument/instrument_eq.csv")
+    instrument_eq = pd.read_csv("./instrument/instrument_eq.csv")
     for i, instrument in instrument_eq.iterrows():
         try:
             market_cap = GROWW.get_quote(
@@ -46,20 +48,20 @@ def save_instrument_eq():
             )["market_cap"]
         except Exception as e:
             market_cap = None
-        
+
         sleep(0.1)
-        try:  
+        try:
             cursor.execute(
                 """
                 INSERT INTO instrument_eq (
-                    exchange, exchange_token, trading_symbol, groww_symbol, name, 
-                    instrument_type, segment, series, isin, underlying_symbol, 
-                    underlying_exchange_token, expiry_date, strike_price, lot_size, 
-                    tick_size, freeze_quantity, is_reserved, buy_allowed, sell_allowed, 
+                    exchange, exchange_token, trading_symbol, groww_symbol, name,
+                    instrument_type, segment, series, isin, underlying_symbol,
+                    underlying_exchange_token, expiry_date, strike_price, lot_size,
+                    tick_size, freeze_quantity, is_reserved, buy_allowed, sell_allowed,
                     internal_trading_symbol, is_intraday, market_cap
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (exchange_token, trading_symbol) 
+                ON CONFLICT (exchange_token, trading_symbol)
                 DO UPDATE SET
                     exchange = EXCLUDED.exchange,
                     groww_symbol = EXCLUDED.groww_symbol,
@@ -113,20 +115,20 @@ def save_instrument_eq():
             print(f"Error saving instrument at row {i}: {str(e)}")
 
 def save_instrument_idx():
-    instrument_idx = pd.read_csv("~/work/quant-trading/trading-bot/instrument/instrument_idx.csv")
+    instrument_idx = pd.read_csv("./instrument/instrument_idx.csv")
     for i, instrument in instrument_idx.iterrows():
         try:
             cursor.execute(
                 """
                 INSERT INTO instrument_idx (
-                    exchange, exchange_token, trading_symbol, groww_symbol, name, 
-                    instrument_type, segment, series, isin, underlying_symbol, 
-                    underlying_exchange_token, expiry_date, strike_price, lot_size, 
-                    tick_size, freeze_quantity, is_reserved, buy_allowed, sell_allowed, 
+                    exchange, exchange_token, trading_symbol, groww_symbol, name,
+                    instrument_type, segment, series, isin, underlying_symbol,
+                    underlying_exchange_token, expiry_date, strike_price, lot_size,
+                    tick_size, freeze_quantity, is_reserved, buy_allowed, sell_allowed,
                     internal_trading_symbol, is_intraday
                 )
                 VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
-                ON CONFLICT (exchange_token, trading_symbol) 
+                ON CONFLICT (exchange_token, trading_symbol)
                 DO UPDATE SET
                     exchange = EXCLUDED.exchange,
                     groww_symbol = EXCLUDED.groww_symbol,

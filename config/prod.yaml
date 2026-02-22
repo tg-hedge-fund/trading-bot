@@ -5,5 +5,5 @@ db:
   host: localhost
   port: 5432
 
-instrument_and_token_schedule: False
+instrument_and_eq_schedule: False
 golden_cross_schedule: True

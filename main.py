@@ -27,9 +27,11 @@ threads = []
 # schedules
 def run_instrument_and_token_schedule():
     try:
-        logger.info("Starting instrument and token schedule thread")
-        schedule.every().sunday.do(scheduled_jobs_instrument, "IDX")
-        run_job_every_mon_fri("08:00", scheduled_jobs_instrument, "EQ")
+        if config.get("instrument_and_eq_schedule"):
+            logger.info("Running save instrument job...")
+            schedule.every().sunday.do(scheduled_jobs_instrument, "IDX")
+            run_job_every_mon_fri("08:00", scheduled_jobs_instrument, "EQ")
+        logger.info("Generating Token...")
         run_job_every_mon_fri("06:00", generate_token_every_morning_mtof)
 
         # Run the scheduler loop continuously
@@ -119,17 +121,16 @@ if __name__ == "__main__":
 
     try:
         # need to add token checker per minute, for expired or fabricated token. fetch user details to check token authenticitly
-      
+
         # Start scheduler threads first (before Discord bot)
-        if config.get("instrument_and_token_schedule"):
-            instrument_and_token_schedule = Thread(
-                target=run_instrument_and_token_schedule,
-                name="instrument_and_token_schedule",
-                daemon=False
-            )
-            threads.append(instrument_and_token_schedule)
-            instrument_and_token_schedule.start()
-            logger.info("Instrument and token schedule thread started")
+        instrument_and_token_schedule = Thread(
+            target=run_instrument_and_token_schedule,
+            name="instrument_and_token_schedule",
+            daemon=False
+        )
+        threads.append(instrument_and_token_schedule)
+        instrument_and_token_schedule.start()
+        logger.info("Instrument and token schedule thread started")
 
         if config.get("golden_cross_schedule"):
             golden_cross_schedule = Thread(
