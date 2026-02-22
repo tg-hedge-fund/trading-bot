@@ -12,6 +12,7 @@ from utils.discord_bot import (
     send_message_via_discord_bot,
     start_discord_bot_instance,
     stop_discord_bot,
+    wait_for_empty_discord_message_queue,
 )
 from utils.jobs import (
     generate_token_every_morning_mtof,
@@ -93,6 +94,7 @@ async def run_discord_bot():
         logger.error(f"Error running Discord bot: {e}", exc_info=True)
     finally:
         logger.info("Closing Discord bot connection")
+        await wait_for_empty_discord_message_queue()
         await stop_discord_bot()
 
 
@@ -131,6 +133,15 @@ if __name__ == "__main__":
         instrument_and_token_schedule.start()
         logger.info("Instrument and token schedule thread started")
 
+        discord_bot_heartbeat_thread = Thread(
+            target=discord_bot_heartbeat,
+            name="discord_bot_heartbeat_thread",
+            daemon=False
+        )
+        threads.append(discord_bot_heartbeat_thread)
+        discord_bot_heartbeat_thread.start()
+        logger.info("discord bot heartbeat thread started")
+
         if config.get("golden_cross_schedule"):
             golden_cross_schedule = Thread(
                 target=run_golden_cross_schedule,
@@ -140,16 +151,6 @@ if __name__ == "__main__":
             threads.append(golden_cross_schedule)
             golden_cross_schedule.start()
             logger.info("Golden cross schedule thread started")
-
-        if config.get("golden_cross_schedule"):
-            discord_bot_heartbeat_thread = Thread(
-                target=discord_bot_heartbeat,
-                name="discord_bot_heartbeat_thread",
-                daemon=False
-            )
-            threads.append(discord_bot_heartbeat_thread)
-            discord_bot_heartbeat_thread.start()
-            logger.info("discord bot heartbeat thread started")
 
         if not threads:
             logger.warning("No scheduler threads were configured to run")
