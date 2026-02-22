@@ -2,6 +2,7 @@ import schedule
 
 from trade_utils.save_instruments import save_instrument_eq, save_instrument_idx
 from utils.token_generator import generate_token
+from utils.utils import logger
 
 
 def run_job_every_mon_fri(time, fn, *args):
@@ -18,4 +19,5 @@ def scheduled_jobs_instrument(run_arg):
         save_instrument_idx()
 
 def generate_token_every_morning_mtof():
+    logger.info("Generating Token...")
     generate_token()
