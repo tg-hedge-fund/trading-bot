@@ -118,6 +118,8 @@ if __name__ == "__main__":
     logger.info("Starting Trading Bot Application")
 
     try:
+        # need to add token checker per minute, for expired or fabricated token. fetch user details to check token authenticitly
+      
         # Start scheduler threads first (before Discord bot)
         if config.get("instrument_and_token_schedule"):
             instrument_and_token_schedule = Thread(

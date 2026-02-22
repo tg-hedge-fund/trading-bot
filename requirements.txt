@@ -6,3 +6,4 @@ growwapi
 pyotp
 psycopg2-binary
 python-dotenv
+fastapi[standard]
