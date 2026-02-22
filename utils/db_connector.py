@@ -1,6 +1,9 @@
 import psycopg2
 
-from utils.utils import config
+from utils.discord_bot import (
+    send_message_via_discord_bot,
+)
+from utils.utils import config, logger
 
 
 class PGConnector:
@@ -18,9 +21,10 @@ class PGConnector:
             )
             return self.conn, self.conn.cursor()
         except Exception as e:
-            print(f"Database connection failed: {str(e)}")            
-            return None, None  
-          
+            send_message_via_discord_bot(f"Database connection failed: {str(e)}")
+            logger.error(f"Database connection failed: {str(e)}")
+            return None, None
+
     def close_db_conn(self):
         if self.conn:
             self.conn.close()

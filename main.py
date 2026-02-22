@@ -12,7 +12,7 @@ from utils.discord_bot import (
     send_message_via_discord_bot,
     start_discord_bot_instance,
     stop_discord_bot,
-    wait_for_empty_discord_message_queue,
+    wait_for_empty_discord_message_queue
 )
 from utils.jobs import (
     generate_token_every_morning_mtof,
@@ -41,6 +41,7 @@ def run_instrument_and_token_schedule():
                 break
         logger.info("Instrument and token schedule thread shutting down gracefully")
     except Exception as e:
+        send_message_via_discord_bot(f"Error in instrument and token schedule thread: {e}")
         logger.error(f"Error in instrument and token schedule thread: {e}", exc_info=True)
 
 
@@ -62,24 +63,25 @@ def run_golden_cross_schedule():
                 break
         logger.info("Golden cross schedule thread shutting down gracefully")
     except Exception as e:
+        send_message_via_discord_bot(f"Error in golden cross schedule thread: {e}")
         logger.error(f"Error in golden cross schedule thread: {e}", exc_info=True)
 
 
 def discord_bot_heartbeat():
-    def test_run():
+    def send_heartbeat():
         send_message_via_discord_bot("HEARTBEAT")
 
     try:
         logger.info("Starting Heartbeat Thread")
-        schedule.every(60).seconds.do(test_run)
+        schedule.every(60).seconds.do(send_heartbeat)
 
         while not schedule_shutdown_event.is_set():
             schedule.run_pending()
             if schedule_shutdown_event.wait(5):
                 break
-        logger.info("Golden cross schedule thread shutting down gracefully")
+        logger.info("Discord bot shutting down gracefully")
     except Exception as e:
-        logger.error(f"Error in golden cross schedule thread: {e}", exc_info=True)
+        logger.error(f"Error in Discord bot shutting down gracefully: {e}", exc_info=True)
 
 
 async def run_discord_bot():
@@ -158,6 +160,7 @@ if __name__ == "__main__":
         # Run the Discord bot on the main event loop
         # This will block until the bot is stopped via signal handler
         asyncio.run(run_discord_bot())
+        # run_discord_bot()
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received")

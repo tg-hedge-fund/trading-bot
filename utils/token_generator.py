@@ -4,6 +4,7 @@ import pyotp
 from growwapi import GrowwAPI, GrowwFeed
 
 from utils.app_config import extract_groww_keys, write_keys
+from utils.discord_bot import send_message_via_discord_bot
 
 
 def generate_token():
@@ -13,10 +14,12 @@ def generate_token():
   try:
       access_token = GrowwAPI.get_access_token(api_key, totp)
   except Exception:
-      RuntimeError("Error generating access token from Groww, trying again")
+      send_message_via_discord_bot("Error generating access token from Groww, trying again!")
+      RuntimeError("Error generating access token from Groww, trying again!")
       try:
           access_token = GrowwAPI.get_access_token(api_key, totp)
       except Exception:
+          send_message_via_discord_bot("Error generating access token from Groww")
           RuntimeError("Error generating access token from Groww")
   write_keys(api_key, secret, access_token)
   return api_key, secret, access_token
