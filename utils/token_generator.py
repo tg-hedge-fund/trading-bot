@@ -5,6 +5,7 @@ from growwapi import GrowwAPI, GrowwFeed
 
 from utils.app_config import extract_groww_keys, write_keys
 from utils.discord_bot import send_message_via_discord_bot
+from utils.utils import logger
 
 
 def generate_token():
@@ -22,6 +23,7 @@ def generate_token():
           send_message_via_discord_bot("Error generating access token from Groww")
           RuntimeError("Error generating access token from Groww")
   write_keys(api_key, secret, access_token)
+  logger.info("Groww Access Token generated...")
   return api_key, secret, access_token
 
 
