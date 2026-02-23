@@ -96,7 +96,6 @@ async def run_discord_bot():
         logger.error(f"Error running Discord bot: {e}", exc_info=True)
     finally:
         logger.info("Closing Discord bot connection")
-        await wait_for_empty_discord_message_queue()
         await stop_discord_bot()
 
 
