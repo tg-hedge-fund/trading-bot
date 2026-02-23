@@ -1,1 +1,1 @@
-Project for Prathmesh's future hedge-fund
+Project for Prathmesh's hedge-fund
