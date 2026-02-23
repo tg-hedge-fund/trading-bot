@@ -54,7 +54,7 @@ def run_golden_cross_schedule():
             schedule.every().__getattribute__(day).at("11:15").do(get_live_quote_by_hour)
             schedule.every().__getattribute__(day).at("12:15").do(get_live_quote_by_hour)
             schedule.every().__getattribute__(day).at("13:15").do(get_live_quote_by_hour)
-            schedule.every().__getattribute__(day).at("14:52").do(get_live_quote_by_hour)
+            schedule.every().__getattribute__(day).at("14:15").do(get_live_quote_by_hour)
             schedule.every().__getattribute__(day).at("15:15").do(get_live_quote_by_hour)
 
         while not schedule_shutdown_event.is_set():
