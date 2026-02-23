@@ -12,7 +12,6 @@ from utils.discord_bot import (
     send_message_via_discord_bot,
     start_discord_bot_instance,
     stop_discord_bot,
-    wait_for_empty_discord_message_queue
 )
 from utils.jobs import (
     generate_token_every_morning_mtof,
@@ -73,11 +72,11 @@ def discord_bot_heartbeat():
 
     try:
         logger.info("Starting Heartbeat Thread")
-        schedule.every(60).seconds.do(send_heartbeat)
+        schedule.every(5).minutes.do(send_heartbeat)
 
         while not schedule_shutdown_event.is_set():
             schedule.run_pending()
-            if schedule_shutdown_event.wait(5):
+            if schedule_shutdown_event.wait(60):
                 break
         logger.info("Discord bot shutting down gracefully")
     except Exception as e:
@@ -88,6 +87,7 @@ async def run_discord_bot():
     try:
         logger.info("Starting Discord bot")
         await start_discord_bot_instance()
+        send_message_via_discord_bot("Started application...")
         # Keep the bot running until shutdown signal
         while not schedule_shutdown_event.is_set():
             await asyncio.sleep(1)
