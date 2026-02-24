@@ -16,15 +16,14 @@ def generate_token():
       access_token = GrowwAPI.get_access_token(api_key, totp)
   except Exception:
       send_message_via_discord_bot("Error generating access token from Groww, trying again!")
-      RuntimeError("Error generating access token from Groww, trying again!")
       try:
           access_token = GrowwAPI.get_access_token(api_key, totp)
       except Exception:
           send_message_via_discord_bot("Error generating access token from Groww")
           RuntimeError("Error generating access token from Groww")
-  write_keys(api_key, secret, access_token)
-  logger.info("Groww Access Token generated...")
-  return api_key, secret, access_token
+  if access_token != "":
+      write_keys(api_key, secret, access_token)
+      send_message_via_discord_bot("Groww Access Token generated...")
 
 
 def get_access_token():

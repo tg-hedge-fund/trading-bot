@@ -1,4 +1,5 @@
 import asyncio
+import os
 import signal
 import sys
 from threading import Event, Thread
@@ -58,7 +59,7 @@ def run_golden_cross_schedule():
 
         while not schedule_shutdown_event.is_set():
             schedule.run_pending()
-            if schedule_shutdown_event.wait(60):
+            if schedule_shutdown_event.wait(5):
                 break
         logger.info("Golden cross schedule thread shutting down gracefully")
     except Exception as e:
@@ -87,7 +88,7 @@ async def run_discord_bot():
     try:
         logger.info("Starting Discord bot")
         await start_discord_bot_instance()
-        send_message_via_discord_bot("Started application...")
+        send_message_via_discord_bot(f"Started application on {os.getenv("TGHF_ENV")}...")
         # Keep the bot running until shutdown signal
         while not schedule_shutdown_event.is_set():
             await asyncio.sleep(1)

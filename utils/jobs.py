@@ -1,6 +1,7 @@
 import schedule
 
 from trade_utils.save_instruments import save_instrument_eq, save_instrument_idx
+from utils.discord_bot import send_message_via_discord_bot
 from utils.token_generator import generate_token
 from utils.utils import logger
 
@@ -19,5 +20,5 @@ def scheduled_jobs_instrument(run_arg):
         save_instrument_idx()
 
 def generate_token_every_morning_mtof():
-    logger.info("Generating Token...")
+    send_message_via_discord_bot("Generating Token...")
     generate_token()
