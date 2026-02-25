@@ -3,6 +3,14 @@ from utils.token_generator import get_access_token
 
 ACCESS_TOKEN, GROWW, FEED = get_access_token()
 
+def refresh_groww_credentials():
+    global ACCESS_TOKEN, GROWW, FEED
+    try:
+        ACCESS_TOKEN, GROWW, FEED = get_access_token()
+    except Exception as e:
+        send_message_via_discord_bot(f"Error refreshing GROWW credentials: {e}")
+        raise
+
 # https://groww.in/trade-api/docs/python-sdk/backtesting#get-historical-candle-data
 def get_historical_data(start_time, end_time, groww_symbol, exchange, segment, candle_interval):
     try:

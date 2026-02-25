@@ -33,19 +33,26 @@ def get_historical_data_populated():
     start_time_formatted = start_time.strftime("%Y-%m-%d %H:%M:%S")
     logger.info(f"start_time: {start_time_formatted}, end_time: {end_time_formatted}")
     historical_data = get_historical_data(start_time_formatted, end_time_formatted, f"{EXCHANGE}-{GROWW_SYMBOL}", EXCHANGE, SEGMENT, CANDLE_INTERVAL)
-    closing_prices_historical_data = [i[4] for i in historical_data["candles"]]
-    print(closing_prices_historical_data[0])
-    return closing_prices_historical_data
+
+    if historical_data is not None:
+        closing_prices_historical_data = [i[4] for i in historical_data["candles"]]
+        return closing_prices_historical_data
+    else:
+        logger.error("historical_data is none, skipping the schedule")
+        return None
 
 def get_live_quote_by_hour():
-    # global data, ema_data
-    data = stream_live_data_by_quote(EXCHANGE, SEGMENT, GROWW_SYMBOL)
-    last_traded_price_data = data["last_price"]
     closing_prices_historical_data = get_historical_data_populated()
-    #set ema data here
-    closing_prices_historical_data.append(last_traded_price_data)
+    data = stream_live_data_by_quote(EXCHANGE, SEGMENT, GROWW_SYMBOL)
+    if data is not None and closing_prices_historical_data is not None:
+        last_traded_price_data = data["last_price"]
+        closing_prices_historical_data.append(last_traded_price_data)
+    else:
+        logger.error("live quote feed is none, skipping schedule")
+        return
+
     ema_data = closing_prices_historical_data
-    print("ema_data", ema_data)
+
     current_time = datetime.now().time()
     market_start = datetime.strptime("09:15", "%H:%M").time()
     market_end = datetime.strptime("15:30", "%H:%M").time()

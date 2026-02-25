@@ -6,6 +6,7 @@ from threading import Event, Thread
 
 import schedule
 
+from api.groww_api_handlers import refresh_groww_credentials
 from strategies.golden_cross import (
     get_live_quote_by_hour,
 )
@@ -33,6 +34,7 @@ def run_instrument_and_token_schedule():
             schedule.every().sunday.do(scheduled_jobs_instrument, "IDX")
             run_job_every_mon_fri("08:00", scheduled_jobs_instrument, "EQ")
         run_job_every_mon_fri("07:00", generate_token_every_morning_mtof)
+        run_job_every_mon_fri("07:01", refresh_groww_credentials)
 
         # Run the scheduler loop continuously
         while not schedule_shutdown_event.is_set():

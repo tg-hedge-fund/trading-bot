@@ -143,7 +143,6 @@ def send_message_via_discord_bot(message):
 
 
 async def send_message_via_discord_bot_async(message):
-    """Send a message via the Discord bot (async)"""
     global _bot_instance
     if _bot_instance is None:
         logger.error("Bot isn't running")

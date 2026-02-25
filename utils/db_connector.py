@@ -21,7 +21,6 @@ class PGConnector:
             )
             return self.conn, self.conn.cursor()
         except Exception as e:
-            send_message_via_discord_bot(f"Database connection failed: {str(e)}")
             logger.error(f"Database connection failed: {str(e)}")
             return None, None
 
