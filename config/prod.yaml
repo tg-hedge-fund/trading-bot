@@ -7,3 +7,15 @@ db:
 
 instrument_and_eq_schedule: True
 golden_cross_schedule: True
+
+auth:
+  argon2:
+    time_cost: 5
+    memory_cost: 65536
+    parallelism: 5
+    hash_len: 16
+    salt_len: 16
+
+wrapper_api:
+  port: 3001
+  host: 89.167.82.104
