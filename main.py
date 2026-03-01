@@ -32,7 +32,7 @@ WRAPPER_API_PORT = config.get("wrapper_api.port")
 WRAPPER_API_HOST = config.get("wrapper_api.host")
 WRAPPER_API_LOG_LEVEL = "debug"
 
-# reverse-proxy-apis
+# wrapper-apis
 def run_wrapper_api():
     uvicorn.run(app, host=str(WRAPPER_API_HOST), port=int(str(WRAPPER_API_PORT)), log_level=WRAPPER_API_LOG_LEVEL)
 
