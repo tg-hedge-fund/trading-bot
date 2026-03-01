@@ -2,7 +2,6 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, HTTPException
-
 from groww_api_handlers import get_historical_data, stream_live_data_by_quote
 
 load_dotenv()
@@ -11,7 +10,7 @@ API_TOKEN = os.getenv("DATA_PROXY_TOKEN")
 
 app = FastAPI(
     title="Groww Read-Only Data Proxy",
-    description="Internal read-only proxy for EMA & strategy scanners",
+    description="Internal read-only proxy for Historical and Live data",
 )
 
 # Create a router with /api/v1 prefix
