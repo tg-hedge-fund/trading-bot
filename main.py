@@ -27,6 +27,7 @@ from utils.utils import config, logger
 # Global event for graceful shutdown
 schedule_shutdown_event = Event()
 threads = []
+uvicorn_server = None
 
 WRAPPER_API_PORT = config.get("wrapper_api.port")
 WRAPPER_API_HOST = config.get("wrapper_api.host")
@@ -34,7 +35,31 @@ WRAPPER_API_LOG_LEVEL = "debug"
 
 # wrapper-apis
 def run_wrapper_api():
-    uvicorn.run(app, host=str(WRAPPER_API_HOST), port=int(str(WRAPPER_API_PORT)), log_level=WRAPPER_API_LOG_LEVEL)
+    """Run uvicorn server with graceful shutdown support"""
+    global uvicorn_server
+
+    config_obj = uvicorn.Config(
+        app,
+        host=str(WRAPPER_API_HOST),
+        port=int(str(WRAPPER_API_PORT)),
+        log_level=WRAPPER_API_LOG_LEVEL
+    )
+    uvicorn_server = uvicorn.Server(config_obj)
+
+    # Run the server - it will be stopped via shutdown_uvicorn_server()
+    asyncio.run(uvicorn_server.serve())
+
+
+def shutdown_uvicorn_server():
+    """Gracefully shutdown the uvicorn server"""
+    global uvicorn_server
+
+    if uvicorn_server is not None:
+        logger.info("Initiating uvicorn server graceful shutdown...")
+        # Set the should_exit flag to trigger graceful shutdown
+        uvicorn_server.should_exit = True
+        logger.info("Uvicorn server shutdown signal sent")
+
 
 # schedules
 def run_instrument_and_token_schedule():
@@ -90,16 +115,16 @@ def discord_bot_heartbeat():
             schedule.run_pending()
             if schedule_shutdown_event.wait(60):
                 break
-        logger.info("Discord bot shutting down gracefully")
+        logger.info("Discord bot heartbeat thread shutting down gracefully")
     except Exception as e:
-        logger.error(f"Error in Discord bot shutting down gracefully: {e}", exc_info=True)
+        logger.error(f"Error in Discord bot heartbeat thread: {e}", exc_info=True)
 
 
 async def run_discord_bot():
     try:
         logger.info("Starting Discord bot")
         await start_discord_bot_instance()
-        send_message_via_discord_bot(f"Started application on {os.getenv("TGHF_ENV")}...")
+        send_message_via_discord_bot(f"Started application on {os.getenv('TGHF_ENV')}...")
         # Keep the bot running until shutdown signal
         while not schedule_shutdown_event.is_set():
             await asyncio.sleep(1)
@@ -112,12 +137,21 @@ async def run_discord_bot():
 
 
 def shutdown_handler(signum, frame):
+    """Handle shutdown signals (SIGINT, SIGTERM)"""
     logger.info(f"Received signal {signum}. Starting graceful shutdown...")
+
+    # Signal uvicorn to shutdown
+    shutdown_uvicorn_server()
+
+    # Signal all other threads to shutdown
     schedule_shutdown_event.set()
 
 
 def wait_for_threads(timeout=30):
+    """Wait for all threads to complete with timeout"""
     logger.info("Waiting for all threads to complete...")
+    # start_time = asyncio.get_event_loop().time() if asyncio._get_running_loop() is None else 0
+
     for thread in threads:
         thread.join(timeout=timeout)
         if thread.is_alive():
@@ -144,9 +178,9 @@ if __name__ == "__main__":
         )
         threads.append(wrapper_api_thread)
         wrapper_api_thread.start()
-        logger.info(f"Wrapper api started on port: {WRAPPER_API_PORT}")
+        logger.info(f"Wrapper API thread started on {WRAPPER_API_HOST}:{WRAPPER_API_PORT}")
 
-        # Start scheduler threads first (before Discord bot)
+        # Start scheduler threads
         instrument_and_token_schedule = Thread(
             target=run_instrument_and_token_schedule,
             name="instrument_and_token_schedule",
@@ -163,7 +197,7 @@ if __name__ == "__main__":
         )
         threads.append(discord_bot_heartbeat_thread)
         discord_bot_heartbeat_thread.start()
-        logger.info("discord bot heartbeat thread started")
+        logger.info("Discord bot heartbeat thread started")
 
         if config.get("golden_cross_schedule"):
             golden_cross_schedule = Thread(
@@ -176,20 +210,19 @@ if __name__ == "__main__":
             logger.info("Golden cross schedule thread started")
 
         if not threads:
-            logger.warning("No scheduler threads were configured to run")
+            logger.warning("No threads were configured to run")
 
         # Run the Discord bot on the main event loop
         # This will block until the bot is stopped via signal handler
         asyncio.run(run_discord_bot())
-        # run_discord_bot()
 
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received")
-        schedule_shutdown_event.set()
+        shutdown_handler(signal.SIGINT, None)
         wait_for_threads()
     except Exception as e:
         logger.error(f"Unexpected error in main thread: {e}", exc_info=True)
-        schedule_shutdown_event.set()
+        shutdown_handler(signal.SIGTERM, None)
         wait_for_threads()
         sys.exit(1)
     else:
