@@ -27,7 +27,7 @@ SET default_table_access_method = heap;
 -- Name: instrument_idx; Type: TABLE; Schema: primary; Owner: postgres
 --
 
-CREATE TABLE "primary".instrument_idx (
+CREATE TABLE IF NOT EXISTS "primary".instrument_idx (
     exchange_token character varying(255) NOT NULL,
     trading_symbol character varying(255) NOT NULL,
     exchange character varying(255) NOT NULL,
@@ -53,7 +53,7 @@ CREATE TABLE "primary".instrument_idx (
 );
 
 
-ALTER TABLE "primary".instrument_idx OWNER TO postgres;
+ALTER TABLE "primary".instrument_idx OWNER TO tghfadm;
 
 --
 -- Name: instrument_idx instrument_idx_pkey; Type: CONSTRAINT; Schema: primary; Owner: postgres
@@ -68,4 +68,3 @@ ALTER TABLE ONLY "primary".instrument_idx
 --
 
 \unrestrict EF2WZa9forntEFaN1wdFhXCgmDWFteO0FT16cGInXtHhHcJcH9EzFPGhFnLO2ff
-
