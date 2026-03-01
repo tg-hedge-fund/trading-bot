@@ -2,7 +2,9 @@ import os
 
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI, HTTPException
-from groww_api_handlers import get_historical_data, stream_live_data_by_quote
+
+from api.groww_api_handlers import get_historical_data, stream_live_data_by_quote
+# from groww_api_handlers import get_historical_data, stream_live_data_by_quote
 
 load_dotenv()
 
@@ -77,6 +79,7 @@ def get_historical_data_proxy(
     try:
         historical_data = get_historical_data(start_time=start_time, end_time=end_time, groww_symbol=f"{exchange.upper()}-{groww_symbol.upper()}", exchange=exchange.upper(), segment=segment.upper(), candle_interval=candle_interval)
         return historical_data
+        # return ""
     except Exception as e:
         return {"status": "500", "message": e}
 
@@ -86,6 +89,7 @@ def get_live_data_proxy(exchange, segment, trading_symbol):
     try:
         live_data = stream_live_data_by_quote(exchange=exchange, segment=segment, trading_symbol=trading_symbol)
         return live_data
+        # return ""
     except Exception as e:
         return {"status": "500", "message": e}
 

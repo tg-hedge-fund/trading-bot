@@ -5,8 +5,10 @@ import sys
 from threading import Event, Thread
 
 import schedule
+import uvicorn
 
 from api.groww_api_handlers import refresh_groww_credentials
+from api.wrapper_api import app
 from strategies.golden_cross import (
     get_live_quote_by_hour,
 )
@@ -25,6 +27,14 @@ from utils.utils import config, logger
 # Global event for graceful shutdown
 schedule_shutdown_event = Event()
 threads = []
+
+WRAPPER_API_PORT = config.get("wrapper_api.port")
+WRAPPER_API_HOST = config.get("wrapper_api.host")
+WRAPPER_API_LOG_LEVEL = "debug"
+
+# reverse-proxy-apis
+def run_wrapper_api():
+    uvicorn.run(app, host=str(WRAPPER_API_HOST), port=int(str(WRAPPER_API_PORT)), log_level=WRAPPER_API_LOG_LEVEL)
 
 # schedules
 def run_instrument_and_token_schedule():
@@ -125,6 +135,16 @@ if __name__ == "__main__":
 
     try:
         # need to add token checker per minute, for expired or fabricated token. fetch user details to check token authenticitly
+
+        # api thread
+        wrapper_api_thread = Thread(
+            target=run_wrapper_api,
+            name="wrapper_api_thread",
+            daemon=False
+        )
+        threads.append(wrapper_api_thread)
+        wrapper_api_thread.start()
+        logger.info(f"Wrapper api started on port: {WRAPPER_API_PORT}")
 
         # Start scheduler threads first (before Discord bot)
         instrument_and_token_schedule = Thread(
