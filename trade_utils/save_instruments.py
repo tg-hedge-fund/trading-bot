@@ -5,6 +5,7 @@ import pandas as pd
 
 from utils.db_connector import PGConnector
 from utils.token_generator import get_access_token
+from utils.utils import logger
 
 ACCESS_TOKEN, GROWW, FEED = get_access_token()
 
@@ -112,7 +113,7 @@ def save_instrument_eq():
             conn.commit()
         except Exception as e:
             conn.rollback()
-            print(f"Error saving instrument at row {i}: {str(e)}")
+            logger.error(f"Error saving instrument at row {i}: {str(e)}")
 
 def save_instrument_idx():
     instrument_idx = pd.read_csv("./instrument/instrument_idx.csv")
@@ -177,4 +178,4 @@ def save_instrument_idx():
             conn.commit()
         except Exception as e:
             conn.rollback()
-            print(f"Error saving instrument at row {i}: {str(e)}")
+            logger.error(f"Error saving instrument at row {i}: {str(e)}")
