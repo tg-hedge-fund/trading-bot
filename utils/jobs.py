@@ -1,3 +1,5 @@
+from threading import Thread
+
 import schedule
 
 from trade_utils.save_instruments import save_instrument_eq, save_instrument_idx
@@ -16,9 +18,12 @@ def run_job_every_mon_fri(time, fn, *args):
 def scheduled_jobs_instrument(run_arg):
     logger.info("Running save instrument job...")
     if (run_arg == "EQ"):
-        save_instrument_eq()
+        save_instrument_eq_thread = Thread(target=save_instrument_eq, daemon=False)
+        save_instrument_eq_thread.start()
     elif (run_arg == "IDX"):
-        save_instrument_idx()
+        save_instrument_idx_thread = Thread(target=save_instrument_eq, daemon=False)
+        save_instrument_idx_thread.start()
+
 
 def generate_token_every_morning_mtof():
     send_message_via_discord_bot("Generating Token...")

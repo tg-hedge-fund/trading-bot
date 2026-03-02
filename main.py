@@ -12,6 +12,7 @@ from api.wrapper_api import app
 from strategies.golden_cross import (
     get_live_quote_by_hour,
 )
+from trade_utils.save_instruments import save_instrument_eq, save_instrument_idx
 from utils.discord_bot import (
     send_message_via_discord_bot,
     start_discord_bot_instance,
@@ -22,7 +23,7 @@ from utils.jobs import (
     run_job_every_mon_fri,
     scheduled_jobs_instrument,
 )
-from utils.utils import config, logger
+from utils.utils import config, logger, run_in_thread
 
 # Global event for graceful shutdown
 schedule_shutdown_event = Event()
