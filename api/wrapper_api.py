@@ -20,18 +20,6 @@ CANDLE_INTERVAL = "1d"
 
 
 def verify_auth(authorization = Header(None)):
-    """
-    Dependency to verify basic auth credentials.
-
-    Args:
-        authorization: Authorization header from the request
-
-    Returns:
-        dict: Authenticated user information
-
-    Raises:
-        HTTPException: If authorization fails
-    """
     if not authorization:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -63,10 +51,6 @@ def get_historical_data_proxy(
     end_time,
     user = Depends(verify_auth),
 ):
-    """
-    Get historical data for a given symbol.
-    Requires basic authentication.
-    """
     # Validate exchange
     if exchange.upper() not in ["NSE", "BSE"]:
         return {"status": "400", "message": "Exchange must be NSE or BSE"}
@@ -107,10 +91,6 @@ def get_live_data_proxy(
     trading_symbol,
     user = Depends(verify_auth),
 ):
-    """
-    Get live data for a given symbol.
-    Requires basic authentication.
-    """
     try:
         live_data = stream_live_data_by_quote(
             exchange=exchange,

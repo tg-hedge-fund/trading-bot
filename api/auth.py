@@ -9,7 +9,7 @@ from utils.utils import config, logger
 
 
 class AuthenticationError(HTTPException):
-    def __init__(self, detail: str = "Invalid credentials"):
+    def __init__(self, detail = "Invalid credentials"):
         super().__init__(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=detail,
@@ -19,8 +19,6 @@ class AuthenticationError(HTTPException):
 
 class BasicAuthHandler:
     def __init__(self):
-        # Initialize PasswordHasher with configurable parameters
-        # Read from config with sensible defaults
         self.time_cost = config.get("auth.argon2.time_cost", 2)
         self.memory_cost = config.get("auth.argon2.memory_cost", 65536)
         self.parallelism = config.get("auth.argon2.parallelism", 4)
@@ -42,19 +40,7 @@ class BasicAuthHandler:
             f"parallelism={self.parallelism}, hash_len={self.hash_len}, salt_len={self.salt_len}"
         )
 
-    def verify_credentials(self, auth_header: str) -> dict:
-        """
-        Verify basic auth credentials against the users table in PostgreSQL.
-
-        Args:
-            auth_header: Authorization header value (e.g., "Basic base64_encoded_credentials")
-
-        Returns:
-            dict: User information if authentication is successful
-
-        Raises:
-            AuthenticationError: If credentials are invalid or missing
-        """
+    def verify_credentials(self, auth_header) -> dict:
         if not auth_header:
             raise AuthenticationError("Missing authorization header")
 
@@ -114,19 +100,7 @@ class BasicAuthHandler:
             raise AuthenticationError("Authentication service error")
 
 
-def get_current_user(auth_header: str = None) -> dict:
-    """
-    Dependency injection function for FastAPI routes to verify authentication.
-
-    Args:
-        auth_header: Authorization header from the request
-
-    Returns:
-        dict: Authenticated user information
-
-    Raises:
-        AuthenticationError: If authentication fails
-    """
+def get_current_user(auth_header = None) -> dict:
     if not auth_header:
         raise AuthenticationError("Missing authorization header")
 
