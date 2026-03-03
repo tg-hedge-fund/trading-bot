@@ -10,9 +10,9 @@ golden_cross_schedule: True
 
 auth:
   argon2:
-    time_cost: 5
+    time_cost: 4
     memory_cost: 65536
-    parallelism: 5
+    parallelism: 10
     hash_len: 16
     salt_len: 16
 
