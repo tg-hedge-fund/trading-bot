@@ -5,5 +5,17 @@ db:
   host: 127.0.0.1
   port: 5432
 
+auth:
+  argon2:
+    time_cost: 2
+    memory_cost: 65536
+    parallelism: 4
+    hash_len: 16
+    salt_len: 16
+
 instrument_and_token_schedule: False
 golden_cross_schedule: True
+
+wrapper_api:
+  port: 3001
+  host: 127.0.0.1
