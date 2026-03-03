@@ -65,7 +65,7 @@ class BasicAuthHandler:
                 raise AuthenticationError("Authentication service unavailable")
 
             cursor.execute(
-                'SELECT id, username, password_hash FROM "primary".users WHERE username = %s',
+                'SELECT id, username, password_hash FROM users WHERE username = %s',
                 (username,)
             )
             user = cursor.fetchone()
