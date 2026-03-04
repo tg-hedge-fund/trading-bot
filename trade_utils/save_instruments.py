@@ -46,16 +46,6 @@ def save_instrument_eq():
         instrument_eq = pd.read_csv("./instrument/instrument_eq.csv")
         for i, instrument in instrument_eq.iterrows():
             try:
-                market_cap = GROWW.get_quote(
-                    exchange=GROWW.EXCHANGE_NSE,
-                    segment=GROWW.SEGMENT_CASH,
-                    trading_symbol=str(instrument["trading_symbol"])
-                )["market_cap"]
-            except Exception as e:
-                market_cap = None
-
-            sleep(0.1)
-            try:
                 cursor.execute(
                     """
                     INSERT INTO instrument_eq (
@@ -63,7 +53,7 @@ def save_instrument_eq():
                         instrument_type, segment, series, isin, underlying_symbol,
                         underlying_exchange_token, expiry_date, strike_price, lot_size,
                         tick_size, freeze_quantity, is_reserved, buy_allowed, sell_allowed,
-                        internal_trading_symbol, is_intraday, market_cap
+                        internal_trading_symbol, is_intraday
                     )
                     VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (exchange_token, trading_symbol)
@@ -87,7 +77,6 @@ def save_instrument_eq():
                         sell_allowed = EXCLUDED.sell_allowed,
                         internal_trading_symbol = EXCLUDED.internal_trading_symbol,
                         is_intraday = EXCLUDED.is_intraday,
-                        market_cap = EXCLUDED.market_cap
                     """,
                     (
                         _cast_value(instrument["exchange"], 'varchar'),
@@ -110,8 +99,7 @@ def save_instrument_eq():
                         _cast_value(instrument["buy_allowed"], 'int'),
                         _cast_value(instrument["sell_allowed"], 'int'),
                         _cast_value(instrument["internal_trading_symbol"], 'varchar'),
-                        _cast_value(instrument["is_intraday"], 'int'),
-                        _cast_value(market_cap, 'bigint')
+                        _cast_value(instrument["is_intraday"], 'int')
                     )
                 )
                 conn.commit()
