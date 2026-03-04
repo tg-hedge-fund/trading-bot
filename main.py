@@ -67,7 +67,7 @@ def run_instrument_and_token_schedule():
     try:
         if config.get("instrument_and_eq_schedule"):
             schedule.every().sunday.do(scheduled_jobs_instrument, "IDX")
-            run_job_every_mon_fri("09:15", scheduled_jobs_instrument, "EQ")
+            schedule.every().sunday.do(scheduled_jobs_instrument, "EQ")
         run_job_every_mon_fri("07:00", generate_token_every_morning_mtof)
         run_job_every_mon_fri("07:01", refresh_groww_credentials)
 
