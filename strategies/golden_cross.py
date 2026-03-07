@@ -14,7 +14,6 @@ from utils.utils import logger
 ema_50 = []
 ema_100 = []
 
-list_of_stocks = ["NIFTY"]
 GROWW_SYMBOL = "NIFTY"
 EXCHANGE = "NSE"
 CANDLE_INTERVAL = "1hour"
@@ -35,6 +34,7 @@ def get_historical_data_populated():
     historical_data = get_historical_data(start_time_formatted, end_time_formatted, f"{EXCHANGE}-{GROWW_SYMBOL}", EXCHANGE, SEGMENT, CANDLE_INTERVAL)
 
     if historical_data is not None:
+        print(historical_data["candles"][-5:])
         closing_prices_historical_data = [i[4] for i in historical_data["candles"]]
         return closing_prices_historical_data
     else:
@@ -66,7 +66,7 @@ def get_live_quote_by_hour():
         total_crossover_points = len(crossover_50_100)
 
         if crossover_50_100[total_crossover_points-1][0] > crossover_50_100[total_crossover_points-1][1]:
-            send_message_via_discord_bot(f"50 ema has crossed above 100 ema for {EXCHANGE} on {CANDLE_INTERVAL} chart")
+            send_message_via_discord_bot(f"50 ema has crossed above 100 ema for {GROWW_SYMBOL} on {CANDLE_INTERVAL} chart")
         else:
-            send_message_via_discord_bot(f"50 ema has broken below 100 ema for {EXCHANGE} on {CANDLE_INTERVAL} chart")
+            send_message_via_discord_bot(f"50 ema has broken below 100 ema for {GROWW_SYMBOL} on {CANDLE_INTERVAL} chart")
     return ema_data
