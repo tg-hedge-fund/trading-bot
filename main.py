@@ -2,8 +2,7 @@ import asyncio
 import os
 import signal
 import sys
-from asyncio.tasks import wait_for
-from threading import Event, Thread
+from threading import Event
 
 import schedule
 import uvicorn
