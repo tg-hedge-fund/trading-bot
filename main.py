@@ -181,7 +181,7 @@ if __name__ == "__main__":
         # )
         # threads.append(wrapper_api_thread)
         # wrapper_api_thread.start()
-        run_thread(run_wrapper_api,name="run_wrapper_api")
+        threads.append(run_thread(run_wrapper_api,name="run_wrapper_api"))
         logger.info(f"Wrapper API thread started on {WRAPPER_API_HOST}:{WRAPPER_API_PORT}")
 
         # Start scheduler threads
@@ -192,7 +192,7 @@ if __name__ == "__main__":
         # )
         # threads.append(instrument_and_token_schedule)
         # instrument_and_token_schedule.start()\
-        run_thread(run_instrument_and_token_schedule, name="run_instrument_and_token_schedule")
+        threads.append(run_thread(run_instrument_and_token_schedule, name="run_instrument_and_token_schedule"))
         logger.info("Instrument and token schedule thread started")
 
         # discord_bot_heartbeat_thread = Thread(
@@ -202,7 +202,7 @@ if __name__ == "__main__":
         # )
         # threads.append(discord_bot_heartbeat_thread)
         # discord_bot_heartbeat_thread.start()
-        run_thread(discord_bot_heartbeat,name="discord_bot_heartbeat")
+        threads.append(run_thread(discord_bot_heartbeat,name="discord_bot_heartbeat"))
         logger.info("Discord bot heartbeat thread started")
 
         if config.get("golden_cross_schedule"):
@@ -213,7 +213,7 @@ if __name__ == "__main__":
             # )
             # threads.append(golden_cross_schedule)
             # golden_cross_schedule.start()
-            run_thread(run_golden_cross_schedule,name="run_golden_cross_schedule")
+            threads.append(run_thread(run_golden_cross_schedule,name="run_golden_cross_schedule"))
             logger.info("Golden cross schedule thread started")
 
         if not threads:
