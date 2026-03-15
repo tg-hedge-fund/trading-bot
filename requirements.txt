@@ -10,3 +10,4 @@ fastapi[standard]
 discord.py
 uvicorn
 argon2-cffi
+mcp[cli]
