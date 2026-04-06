@@ -12,6 +12,7 @@ from api.wrapper_api import app
 from strategies.golden_cross import (
     get_live_quote_by_hour,
 )
+from utils.constants import MESSAGE_TYPES
 from utils.discord_bot import (
     send_message_via_discord_bot,
     start_discord_bot_instance,
@@ -78,7 +79,7 @@ def run_instrument_and_token_schedule():
                 break
         logger.info("Instrument and token schedule thread shutting down gracefully")
     except Exception as e:
-        send_message_via_discord_bot(f"Error in instrument and token schedule thread: {e}")
+        send_message_via_discord_bot(f"Error in instrument and token schedule thread: {e}", MESSAGE_TYPES.LOGS)
         logger.error(f"Error in instrument and token schedule thread: {e}", exc_info=True)
 
 
@@ -100,13 +101,13 @@ def run_golden_cross_schedule():
                 break
         logger.info("Golden cross schedule thread shutting down gracefully")
     except Exception as e:
-        send_message_via_discord_bot(f"Error in golden cross schedule thread: {e}")
+        send_message_via_discord_bot(f"Error in golden cross schedule thread: {e}", MESSAGE_TYPES.LOGS)
         logger.error(f"Error in golden cross schedule thread: {e}", exc_info=True)
 
 
 def discord_bot_heartbeat():
     def send_heartbeat():
-        send_message_via_discord_bot("HEARTBEAT")
+        send_message_via_discord_bot("HEARTBEAT", MESSAGE_TYPES.HEARTBEAT)
 
     try:
         logger.info("Starting Heartbeat Thread")
@@ -125,7 +126,7 @@ async def run_discord_bot():
     try:
         logger.info("Starting Discord bot")
         await start_discord_bot_instance()
-        send_message_via_discord_bot(f"Started application on {os.getenv('TGHF_ENV')}...")
+        send_message_via_discord_bot(f"Started application on {os.getenv('TGHF_ENV')}...", MESSAGE_TYPES.LOGS)
         # Keep the bot running until shutdown signal
         while not schedule_shutdown_event.is_set():
             await asyncio.sleep(1)
