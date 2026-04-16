@@ -1,4 +1,5 @@
 import asyncio
+from datetime import datetime, timedelta
 import os
 import signal
 import sys
@@ -87,6 +88,8 @@ def run_golden_cross_schedule():
     try:
         logger.info("Starting golden cross schedule thread")
         for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']:
+            # use only for testing
+            # schedule.every().__getattribute__(day).at((datetime.now() + timedelta(minutes=1)).strftime("%H:%M")).do(get_crossover_for_all_indices)
             schedule.every().__getattribute__(day).at("09:00").do(get_crossover_for_all_indices)
             schedule.every().__getattribute__(day).at("10:00").do(get_crossover_for_all_indices)
             schedule.every().__getattribute__(day).at("11:00").do(get_crossover_for_all_indices)
