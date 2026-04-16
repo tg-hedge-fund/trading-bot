@@ -10,7 +10,7 @@ import uvicorn
 from api.groww_api_handlers import refresh_groww_credentials
 from api.wrapper_api import app
 from strategies.golden_cross import (
-    get_live_quote_by_hour,
+    get_crossover_for_all_indices,
 )
 from utils.constants import MESSAGE_TYPES
 from utils.discord_bot import (
@@ -87,13 +87,13 @@ def run_golden_cross_schedule():
     try:
         logger.info("Starting golden cross schedule thread")
         for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']:
-            schedule.every().__getattribute__(day).at("09:15").do(get_live_quote_by_hour)
-            schedule.every().__getattribute__(day).at("10:15").do(get_live_quote_by_hour)
-            schedule.every().__getattribute__(day).at("11:15").do(get_live_quote_by_hour)
-            schedule.every().__getattribute__(day).at("12:15").do(get_live_quote_by_hour)
-            schedule.every().__getattribute__(day).at("13:15").do(get_live_quote_by_hour)
-            schedule.every().__getattribute__(day).at("14:15").do(get_live_quote_by_hour)
-            schedule.every().__getattribute__(day).at("15:15").do(get_live_quote_by_hour)
+            schedule.every().__getattribute__(day).at("09:00").do(get_crossover_for_all_indices)
+            schedule.every().__getattribute__(day).at("10:00").do(get_crossover_for_all_indices)
+            schedule.every().__getattribute__(day).at("11:00").do(get_crossover_for_all_indices)
+            schedule.every().__getattribute__(day).at("12:00").do(get_crossover_for_all_indices)
+            schedule.every().__getattribute__(day).at("13:00").do(get_crossover_for_all_indices)
+            schedule.every().__getattribute__(day).at("14:00").do(get_crossover_for_all_indices)
+            schedule.every().__getattribute__(day).at("15:00").do(get_crossover_for_all_indices)
 
         while not schedule_shutdown_event.is_set():
             schedule.run_pending()
@@ -175,45 +175,17 @@ if __name__ == "__main__":
         # need to add token checker per minute, for expired or fabricated token. fetch user details to check token authenticitly
 
         # api thread
-        # wrapper_api_thread = Thread(
-        #     target=run_wrapper_api,
-        #     name="wrapper_api_thread",
-        #     daemon=False
-        # )
-        # threads.append(wrapper_api_thread)
-        # wrapper_api_thread.start()
         threads.append(run_thread(run_wrapper_api,name="run_wrapper_api"))
         logger.info(f"Wrapper API thread started on {WRAPPER_API_HOST}:{WRAPPER_API_PORT}")
 
         # Start scheduler threads
-        # instrument_and_token_schedule = Thread(
-        #     target=run_instrument_and_token_schedule,
-        #     name="instrument_and_token_schedule",
-        #     daemon=False
-        # )
-        # threads.append(instrument_and_token_schedule)
-        # instrument_and_token_schedule.start()\
         threads.append(run_thread(run_instrument_and_token_schedule, name="run_instrument_and_token_schedule"))
         logger.info("Instrument and token schedule thread started")
 
-        # discord_bot_heartbeat_thread = Thread(
-        #     target=discord_bot_heartbeat,
-        #     name="discord_bot_heartbeat_thread",
-        #     daemon=False
-        # )
-        # threads.append(discord_bot_heartbeat_thread)
-        # discord_bot_heartbeat_thread.start()
         threads.append(run_thread(discord_bot_heartbeat,name="discord_bot_heartbeat"))
         logger.info("Discord bot heartbeat thread started")
 
         if config.get("golden_cross_schedule"):
-            # golden_cross_schedule = Thread(
-            #     target=run_golden_cross_schedule,
-            #     name="golden_cross_schedule",
-            #     daemon=False
-            # )
-            # threads.append(golden_cross_schedule)
-            # golden_cross_schedule.start()
             threads.append(run_thread(run_golden_cross_schedule,name="run_golden_cross_schedule"))
             logger.info("Golden cross schedule thread started")
 
