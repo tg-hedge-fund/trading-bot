@@ -4,14 +4,17 @@ import os
 import discord
 from dotenv import load_dotenv
 
+from utils.constants import MESSAGE_TYPES
 from utils.utils import logger
 
 ENV = os.getenv("TGHF_ENV", "dev")
 
 load_dotenv(f".env.{ENV}")
 TOKEN = os.getenv("DISCORD_TOKEN")
-DISCORD_CHANNEL_ID = os.getenv("DISCORD_CHANNEL_ID")
-HEARTBEAT_DISCORD_CHANNEL_ID = os.getenv("DISCORD_HEARTBEAT_CHANNEL_ID")
+DISCORD_HEARTBEAT_CHANNEL_ID = os.getenv("DISCORD_HEARTBEAT_CHANNEL_ID")
+DISCORD_INDEX_CHANNEL_ID = os.getenv("DISCORD_INDEX_CHANNEL_ID")
+DISCORD_PORTFOLIO_CHANNEL_ID = os.getenv("DISCORD_PORTFOLIO_CHANNEL_ID")
+DISCORD_LOGS_CHANNEL_ID = os.getenv("DISCORD_LOGS_CHANNEL_ID")
 
 class DiscordClient(discord.Client):
     def __init__(self, *args, **kwargs):
@@ -37,40 +40,55 @@ class DiscordClient(discord.Client):
         logger.info("Message worker started")
         while True:
             try:
-                message = await self._message_queue.get()
+                (message, message_type) = await self._message_queue.get()
 
                 if message is None:
                     logger.info("Message worker shutting down")
                     break
 
-                await self._send_message_via_discord(message)
+                await self._send_message_via_discord(message, message_type)
                 await asyncio.sleep(0.5)
 
             except Exception as e:
                 logger.error(f"Error in message worker: {e}", exc_info=True)
 
-    async def _send_message_via_discord(self, message):
+    def _set_channel(self, message_type):
+      channel = None
+      if message_type == MESSAGE_TYPES.INDICES:
+          channel = self.get_channel(int(str(DISCORD_INDEX_CHANNEL_ID)))
+      elif message_type == MESSAGE_TYPES.EQUITY:
+          channel = None
+      elif message_type == MESSAGE_TYPES.PORTFOLIO:
+          channel = self.get_channel(int(str(DISCORD_PORTFOLIO_CHANNEL_ID)))
+      elif message_type == MESSAGE_TYPES.LOGS:
+          channel = self.get_channel(int(str(DISCORD_LOGS_CHANNEL_ID)))
+      elif message_type == MESSAGE_TYPES.HEARTBEAT:
+          channel = self.get_channel(int(str(DISCORD_HEARTBEAT_CHANNEL_ID)))
+
+
+      return channel
+
+    async def _send_message_via_discord(self, message, message_type):
         logger.info(f"send_message called with: {message}")
 
         if self.is_ready():
             try:
-                CHANNEL_ID = int(str(DISCORD_CHANNEL_ID))
-                if message == 'HEARTBEAT':
-                    CHANNEL_ID = int(str(HEARTBEAT_DISCORD_CHANNEL_ID))
-                channel = self.get_channel(CHANNEL_ID)
+                # decide the channel id based on message type
+                channel = self._set_channel(message_type)
+
                 if channel:
                     assert isinstance(channel, discord.abc.Messageable)
                     await channel.send(str(message))
                 else:
-                    logger.error(f"Channel not found with ID: {CHANNEL_ID}")
+                    logger.error(f"Channel not found with ID: {channel}")
                     logger.info(f"Available channels: {[(c.name, c.id) for c in self.get_all_channels()]}")
             except Exception as e:
                 logger.error(f"Error sending message: {e}", exc_info=True)
         else:
             logger.error("Client isn't ready")
 
-    def queue_message(self, message):
-        self._message_queue.put_nowait(message)
+    def queue_message(self, queue_message_tuple):
+        self._message_queue.put_nowait(queue_message_tuple)
 
     async def wait_for_queue_empty(self):
         try:
@@ -81,7 +99,7 @@ class DiscordClient(discord.Client):
     async def shutdown_worker(self):
         if self._worker_task:
             try:
-                await self._message_queue.put(None)  # Send shutdown signal
+                await self._message_queue.put((None, None))  # Send shutdown signal
                 await asyncio.wait_for(self._worker_task, timeout=5.0)
             except asyncio.TimeoutError:
                 logger.warning("Worker task did not stop in time, cancelling")
@@ -134,15 +152,16 @@ async def start_discord_bot_instance():
 
     return _bot_instance
 
-def send_message_via_discord_bot(message):
+def send_message_via_discord_bot(message, message_type):
     global _bot_instance
     if _bot_instance is None:
         logger.error("Bot isn't running")
     else:
-        _bot_instance.queue_message(message)
+        queue_message = (message, message_type)
+        _bot_instance.queue_message(queue_message)
 
 
-async def send_message_via_discord_bot_async(message):
+async def send_message_via_discord_bot_async(message, message_type):
     global _bot_instance
     if _bot_instance is None:
         logger.error("Bot isn't running")
@@ -152,7 +171,8 @@ async def send_message_via_discord_bot_async(message):
             logger.error(f"Failed to start bot: {e}", exc_info=True)
             return
 
-    _bot_instance.queue_message(message)
+    queue_message = (message, message_type)
+    _bot_instance.queue_message(queue_message)
 
 
 async def wait_for_empty_discord_message_queue():

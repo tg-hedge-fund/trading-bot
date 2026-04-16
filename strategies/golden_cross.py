@@ -8,6 +8,7 @@ from datetime import datetime, timedelta
 
 from api.groww_api_handlers import get_historical_data, stream_live_data_by_quote
 from trade_utils.ta_indicators import calculate_ema, calculate_ema_crossover
+from utils.constants import MESSAGE_TYPES
 from utils.discord_bot import send_message_via_discord_bot
 from utils.utils import logger
 
@@ -66,7 +67,7 @@ def get_live_quote_by_hour():
         total_crossover_points = len(crossover_50_100)
 
         if crossover_50_100[total_crossover_points-1][0] > crossover_50_100[total_crossover_points-1][1]:
-            send_message_via_discord_bot(f"50 ema has crossed above 100 ema for {GROWW_SYMBOL} on {CANDLE_INTERVAL} chart")
+            send_message_via_discord_bot(f"50 ema has crossed above 100 ema for {GROWW_SYMBOL} on {CANDLE_INTERVAL} chart", MESSAGE_TYPES.INDICES)
         else:
-            send_message_via_discord_bot(f"50 ema has broken below 100 ema for {GROWW_SYMBOL} on {CANDLE_INTERVAL} chart")
+            send_message_via_discord_bot(f"50 ema has broken below 100 ema for {GROWW_SYMBOL} on {CANDLE_INTERVAL} chart", MESSAGE_TYPES.INDICES)
     return ema_data

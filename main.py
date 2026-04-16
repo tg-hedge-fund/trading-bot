@@ -2,7 +2,7 @@ import asyncio
 import os
 import signal
 import sys
-from threading import Event, Thread
+from threading import Event
 
 import schedule
 import uvicorn
@@ -12,18 +12,19 @@ from api.wrapper_api import app
 from strategies.golden_cross import (
     get_live_quote_by_hour,
 )
-from trade_utils.save_instruments import save_instrument_eq, save_instrument_idx
+from utils.constants import MESSAGE_TYPES
 from utils.discord_bot import (
     send_message_via_discord_bot,
     start_discord_bot_instance,
     stop_discord_bot,
 )
 from utils.jobs import (
-    generate_token_every_morning_mtof,
-    run_job_every_mon_fri,
+    generate_token_every_morning,
+    run_job_everyday,
     scheduled_jobs_instrument,
+    shutdown_job_executor,
 )
-from utils.utils import config, logger, run_in_thread
+from utils.utils import config, logger, run_thread
 
 # Global event for graceful shutdown
 schedule_shutdown_event = Event()
@@ -68,8 +69,8 @@ def run_instrument_and_token_schedule():
         if config.get("instrument_and_eq_schedule"):
             schedule.every().sunday.do(scheduled_jobs_instrument, "IDX")
             schedule.every().sunday.do(scheduled_jobs_instrument, "EQ")
-        run_job_every_mon_fri("07:00", generate_token_every_morning_mtof)
-        run_job_every_mon_fri("07:01", refresh_groww_credentials)
+        run_job_everyday("07:00", generate_token_every_morning)
+        run_job_everyday("07:01", refresh_groww_credentials)
 
         # Run the scheduler loop continuously
         while not schedule_shutdown_event.is_set():
@@ -78,7 +79,7 @@ def run_instrument_and_token_schedule():
                 break
         logger.info("Instrument and token schedule thread shutting down gracefully")
     except Exception as e:
-        send_message_via_discord_bot(f"Error in instrument and token schedule thread: {e}")
+        send_message_via_discord_bot(f"Error in instrument and token schedule thread: {e}", MESSAGE_TYPES.LOGS)
         logger.error(f"Error in instrument and token schedule thread: {e}", exc_info=True)
 
 
@@ -100,13 +101,13 @@ def run_golden_cross_schedule():
                 break
         logger.info("Golden cross schedule thread shutting down gracefully")
     except Exception as e:
-        send_message_via_discord_bot(f"Error in golden cross schedule thread: {e}")
+        send_message_via_discord_bot(f"Error in golden cross schedule thread: {e}", MESSAGE_TYPES.LOGS)
         logger.error(f"Error in golden cross schedule thread: {e}", exc_info=True)
 
 
 def discord_bot_heartbeat():
     def send_heartbeat():
-        send_message_via_discord_bot("HEARTBEAT")
+        send_message_via_discord_bot("HEARTBEAT", MESSAGE_TYPES.HEARTBEAT)
 
     try:
         logger.info("Starting Heartbeat Thread")
@@ -125,7 +126,7 @@ async def run_discord_bot():
     try:
         logger.info("Starting Discord bot")
         await start_discord_bot_instance()
-        send_message_via_discord_bot(f"Started application on {os.getenv('TGHF_ENV')}...")
+        send_message_via_discord_bot(f"Started application on {os.getenv('TGHF_ENV')}...", MESSAGE_TYPES.LOGS)
         # Keep the bot running until shutdown signal
         while not schedule_shutdown_event.is_set():
             await asyncio.sleep(1)
@@ -146,6 +147,8 @@ def shutdown_handler(signum, frame):
 
     # Signal all other threads to shutdown
     schedule_shutdown_event.set()
+    shutdown_job_executor()
+    wait_for_threads()
 
 
 def wait_for_threads(timeout=30):
@@ -172,42 +175,46 @@ if __name__ == "__main__":
         # need to add token checker per minute, for expired or fabricated token. fetch user details to check token authenticitly
 
         # api thread
-        wrapper_api_thread = Thread(
-            target=run_wrapper_api,
-            name="wrapper_api_thread",
-            daemon=False
-        )
-        threads.append(wrapper_api_thread)
-        wrapper_api_thread.start()
+        # wrapper_api_thread = Thread(
+        #     target=run_wrapper_api,
+        #     name="wrapper_api_thread",
+        #     daemon=False
+        # )
+        # threads.append(wrapper_api_thread)
+        # wrapper_api_thread.start()
+        threads.append(run_thread(run_wrapper_api,name="run_wrapper_api"))
         logger.info(f"Wrapper API thread started on {WRAPPER_API_HOST}:{WRAPPER_API_PORT}")
 
         # Start scheduler threads
-        instrument_and_token_schedule = Thread(
-            target=run_instrument_and_token_schedule,
-            name="instrument_and_token_schedule",
-            daemon=False
-        )
-        threads.append(instrument_and_token_schedule)
-        instrument_and_token_schedule.start()
+        # instrument_and_token_schedule = Thread(
+        #     target=run_instrument_and_token_schedule,
+        #     name="instrument_and_token_schedule",
+        #     daemon=False
+        # )
+        # threads.append(instrument_and_token_schedule)
+        # instrument_and_token_schedule.start()\
+        threads.append(run_thread(run_instrument_and_token_schedule, name="run_instrument_and_token_schedule"))
         logger.info("Instrument and token schedule thread started")
 
-        discord_bot_heartbeat_thread = Thread(
-            target=discord_bot_heartbeat,
-            name="discord_bot_heartbeat_thread",
-            daemon=False
-        )
-        threads.append(discord_bot_heartbeat_thread)
-        discord_bot_heartbeat_thread.start()
+        # discord_bot_heartbeat_thread = Thread(
+        #     target=discord_bot_heartbeat,
+        #     name="discord_bot_heartbeat_thread",
+        #     daemon=False
+        # )
+        # threads.append(discord_bot_heartbeat_thread)
+        # discord_bot_heartbeat_thread.start()
+        threads.append(run_thread(discord_bot_heartbeat,name="discord_bot_heartbeat"))
         logger.info("Discord bot heartbeat thread started")
 
         if config.get("golden_cross_schedule"):
-            golden_cross_schedule = Thread(
-                target=run_golden_cross_schedule,
-                name="golden_cross_schedule",
-                daemon=False
-            )
-            threads.append(golden_cross_schedule)
-            golden_cross_schedule.start()
+            # golden_cross_schedule = Thread(
+            #     target=run_golden_cross_schedule,
+            #     name="golden_cross_schedule",
+            #     daemon=False
+            # )
+            # threads.append(golden_cross_schedule)
+            # golden_cross_schedule.start()
+            threads.append(run_thread(run_golden_cross_schedule,name="run_golden_cross_schedule"))
             logger.info("Golden cross schedule thread started")
 
         if not threads:
@@ -220,11 +227,11 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         logger.info("Keyboard interrupt received")
         shutdown_handler(signal.SIGINT, None)
-        wait_for_threads()
+        # wait_for_threads()
     except Exception as e:
         logger.error(f"Unexpected error in main thread: {e}", exc_info=True)
         shutdown_handler(signal.SIGTERM, None)
-        wait_for_threads()
+        # wait_for_threads()
         sys.exit(1)
     else:
         logger.info("Trading Bot Application shutdown complete")

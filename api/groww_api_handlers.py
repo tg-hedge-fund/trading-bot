@@ -1,3 +1,4 @@
+from utils.constants import MESSAGE_TYPES
 from utils.discord_bot import send_message_via_discord_bot
 from utils.token_generator import get_access_token
 
@@ -8,7 +9,7 @@ def refresh_groww_credentials():
     try:
         ACCESS_TOKEN, GROWW, FEED = get_access_token()
     except Exception as e:
-        send_message_via_discord_bot(f"Error refreshing GROWW credentials: {e}")
+        send_message_via_discord_bot(f"Error refreshing GROWW credentials: {e}", MESSAGE_TYPES.LOGS)
         raise
 
 # https://groww.in/trade-api/docs/python-sdk/backtesting#get-historical-candle-data
@@ -25,7 +26,7 @@ def get_historical_data(start_time, end_time, groww_symbol, exchange, segment, c
 
         return historical_data_response
     except Exception as e:
-        send_message_via_discord_bot(f"Error in fetching historical data from GROWW API: {e}")
+        send_message_via_discord_bot(f"Error in fetching historical data from GROWW API: {e}", MESSAGE_TYPES.LOGS)
         RuntimeError(f"Error in fetching historical data from GROWW API: {e}")
   # You can also use expiries and contracts API to get historical data of FNO instruments
   
@@ -46,7 +47,7 @@ def stream_live_data_by_quote(exchange, segment, trading_symbol):
 
         return live_data_by_quote_response
     except Exception as e:
-        send_message_via_discord_bot(f"Error in fetching live quote from GROWW API: {e}")
+        send_message_via_discord_bot(f"Error in fetching live quote from GROWW API: {e}", MESSAGE_TYPES.LOGS)
         RuntimeError(f"Error in fetching live quote from GROWW API: {e}")
 
 
@@ -55,5 +56,5 @@ def get_portfolio():
         holdings_response = GROWW.get_holdings_for_user(timeout=5)
         return holdings_response
     except Exception as e:
-        send_message_via_discord_bot(f"Error in fetching portfolio from GROWW API: {e}")
+        send_message_via_discord_bot(f"Error in fetching portfolio from GROWW API: {e}", MESSAGE_TYPES.LOGS)
         RuntimeError(f"Error in fetching portfolio from GROWW API: {e}")

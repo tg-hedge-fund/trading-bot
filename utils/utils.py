@@ -12,7 +12,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def run_in_thread(fn, *args, daemon=False):
-    t = Thread(target=fn, args=args, daemon=daemon)
+def run_thread(fn, name, daemon=False, *args):
+    t = Thread(target=fn, name=name, daemon=daemon, *args)
     t.start()
     return t

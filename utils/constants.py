@@ -1,3 +1,5 @@
+from enum import Enum
+
 INDICES = [
   "NIFTY",
   "SENSEX",
@@ -14,3 +16,15 @@ INDICES = [
   "NIFTYREALTY",
   "NIFTYMEDIA"
 ]
+
+EQUITY = [
+
+]
+
+
+class MESSAGE_TYPES(Enum):
+  PORTFOLIO = "portfolio"
+  INDICES = "indices"
+  EQUITY = "equity"
+  LOGS = "logs"
+  HEARTBEAT = "heartbeat"

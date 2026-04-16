@@ -1,8 +1,5 @@
 import psycopg2
 
-from utils.discord_bot import (
-    send_message_via_discord_bot,
-)
 from utils.utils import config, logger
 
 
