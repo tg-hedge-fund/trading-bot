@@ -1,8 +1,8 @@
 from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, status
 
-from api.auth import BasicAuthHandler
-from api.groww_api_handlers import get_historical_data, stream_live_data_by_quote
+from api_utils.auth import BasicAuthHandler
+from api_utils.groww_api_handlers import get_historical_data, stream_live_data_by_quote
 
 load_dotenv()
 

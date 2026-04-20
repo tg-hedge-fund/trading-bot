@@ -8,8 +8,8 @@ from threading import Event
 import schedule
 import uvicorn
 
-from api.groww_api_handlers import refresh_groww_credentials
-from api.wrapper_api import app
+from api_utils.groww_api_handlers import refresh_groww_credentials
+from api_utils.wrapper_api import app
 from strategies.golden_cross import (
     get_crossover_for_all_indices,
 )

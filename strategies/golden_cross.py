@@ -9,11 +9,11 @@ import time
 from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime, timedelta
 
-from api.groww_api_handlers import get_historical_data, stream_live_data_by_quote
+from api_utils.groww_api_handlers import get_historical_data, stream_live_data_by_quote
 from trade_utils.ta_indicators import calculate_ema, calculate_ema_crossover
 from utils.constants import INDICES_LIST, MESSAGE_TYPES
 from utils.discord_bot import send_message_via_discord_bot
-from utils.utils import logger, run_thread
+from utils.utils import logger
 
 ema_50 = []
 ema_100 = []
