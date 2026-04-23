@@ -129,12 +129,6 @@ class GoldenCross:
                 MESSAGE_TYPES.INDICES,
             )
             logger.info(f"{self.GROWW_SYMBOL}: sent near-convergence message (diff={last_diff:.6f})")
-        else:  # converging
-            send_message_via_discord_bot(
-                f"50 EMA and 100 EMA are CONVERGING for {self.GROWW_SYMBOL} on {self.CANDLE_INTERVAL} chart — recent diffs decreasing (analyzed last {last_n} points)",
-                MESSAGE_TYPES.INDICES,
-            )
-            logger.info(f"{self.GROWW_SYMBOL}: sent converging message")
 
     def get_live_quote_by_hour(self) -> Optional[List[float]]:
         """
