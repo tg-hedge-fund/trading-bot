@@ -195,7 +195,9 @@ def get_crossover_for_all_indices(timeout_seconds: int = DEFAULT_TIMEOUT_SECS, m
     def _run_for_symbol(symbol: str):
         logger.info(f"Starting GoldenCross for {symbol}")
         try:
-            gc = GoldenCross(symbol=symbol, exchange="NSE", candle_interval="1h", segment="CASH")
+            # small pause to avoid hammering apis when this function is scheduled frequently
+            time.sleep(1)
+            gc = GoldenCross(symbol=symbol, exchange="NSE", candle_interval="1hour", segment="CASH")
             return gc.get_live_quote_by_hour()
         except Exception:
             logger.exception(f"Unhandled exception while running GoldenCross for {symbol}")
@@ -233,5 +235,5 @@ def get_crossover_for_all_indices(timeout_seconds: int = DEFAULT_TIMEOUT_SECS, m
                     logger.exception(f"{sym}: error while waiting for delayed result")
 
     # small pause to avoid hammering apis when this function is scheduled frequently
-    time.sleep(0.25)
+    # time.sleep(0.5)
     logger.info("Completed get_crossover_for_all_indices run")
