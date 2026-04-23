@@ -1,8 +1,8 @@
 from enum import Enum
 
-INDICES = [
+INDICES_LIST = [
   "NIFTY",
-  "SENSEX",
+  # "SENSEX",
   "NIFTY100",
   "NIFTYMIDCAP",
   "BANKNIFTY",

@@ -1,4 +1,4 @@
-from api.groww_api_handlers import get_portfolio
+from api_utils.groww_api_handlers import get_portfolio
 
 
 def get_portfolio_holdings():
