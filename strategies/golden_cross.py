@@ -27,6 +27,7 @@ from utils.utils import logger
 LAST_N = 10
 DEFAULT_TIMEOUT_SECS = 20
 DEFAULT_MAX_WORKERS = 5
+SUBMIT_STAGGER_SECS = 0.5  # seconds between each symbol submission to avoid API rate limit bursts
 
 
 class GoldenCross:
@@ -189,8 +190,6 @@ def get_crossover_for_all_indices(timeout_seconds: int = DEFAULT_TIMEOUT_SECS, m
     def _run_for_symbol(symbol: str):
         logger.info(f"Starting GoldenCross for {symbol}")
         try:
-            # small pause to avoid hammering apis when this function is scheduled frequently
-            time.sleep(1)
             gc = GoldenCross(symbol=symbol, exchange="NSE", candle_interval="1hour", segment="CASH")
             return gc.get_live_quote_by_hour()
         except Exception:
@@ -206,7 +205,13 @@ def get_crossover_for_all_indices(timeout_seconds: int = DEFAULT_TIMEOUT_SECS, m
     workers = min(max_workers, max(1, len(symbols)))
 
     with ThreadPoolExecutor(max_workers=workers) as executor:
-        future_to_symbol = {executor.submit(_run_for_symbol, s): s for s in symbols}
+        # Submit symbols with a stagger delay so workers hit the API in a spread-out cadence
+        # rather than all bursting at once (which caused intermittent rate limit errors).
+        future_to_symbol = {}
+        for i, symbol in enumerate(symbols):
+            if i > 0:
+                time.sleep(SUBMIT_STAGGER_SECS)
+            future_to_symbol[executor.submit(_run_for_symbol, symbol)] = symbol
 
         # Wait for futures to complete; use as_completed to process results as they arrive.
         for fut in _cf.as_completed(future_to_symbol.keys(), timeout=None):
@@ -228,6 +233,4 @@ def get_crossover_for_all_indices(timeout_seconds: int = DEFAULT_TIMEOUT_SECS, m
                 except Exception:
                     logger.exception(f"{sym}: error while waiting for delayed result")
 
-    # small pause to avoid hammering apis when this function is scheduled frequently
-    # time.sleep(0.5)
     logger.info("Completed get_crossover_for_all_indices run")
