@@ -49,7 +49,7 @@ def get_historical_data_proxy(
     candle_interval,
     start_time,
     end_time,
-    user = Depends(verify_auth),
+    # user = Depends(verify_auth),
 ):
     # Validate exchange
     if exchange.upper() not in ["NSE", "BSE"]:
@@ -71,6 +71,7 @@ def get_historical_data_proxy(
     #     return {"status": "400", "message": "start_time must be before end_time"}
 
     try:
+        return {"status": "200", "message": "Under development"}
         historical_data = get_historical_data(
             start_time=start_time,
             end_time=end_time,
@@ -89,9 +90,10 @@ def get_live_data_proxy(
     exchange,
     segment,
     trading_symbol,
-    user = Depends(verify_auth),
+    # user = Depends(verify_auth),
 ):
     try:
+        return {"status": "200", "message": "Under development"}
         live_data = stream_live_data_by_quote(
             exchange=exchange,
             segment=segment,
