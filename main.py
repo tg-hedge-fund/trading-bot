@@ -177,9 +177,9 @@ if __name__ == "__main__":
     try:
         # need to add token checker per minute, for expired or fabricated token. fetch user details to check token authenticitly
 
-        # api thread
-        threads.append(run_thread(run_wrapper_api,name="run_wrapper_api"))
-        logger.info(f"Wrapper API thread started on {WRAPPER_API_HOST}:{WRAPPER_API_PORT}")
+        # api thread - disabling this
+        # threads.append(run_thread(run_wrapper_api,name="run_wrapper_api"))
+        # logger.info(f"Wrapper API thread started on {WRAPPER_API_HOST}:{WRAPPER_API_PORT}")
 
         # Start scheduler threads
         threads.append(run_thread(run_instrument_and_token_schedule, name="run_instrument_and_token_schedule"))
