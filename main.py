@@ -112,9 +112,9 @@ def run_golden_cross_schedule():
 def run_portfolio_summary_schedule():
     try:
         logger.info("Starting portfolio summary schedule thread")
-        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']:
             # use only for testing
-            schedule.every().__getattribute__(day).at((datetime.now() + timedelta(minutes=1)).strftime("%H:%M")).do(get_portfolio_details)
+            # schedule.every().__getattribute__(day).at((datetime.now() + timedelta(minutes=1)).strftime("%H:%M")).do(get_portfolio_details)
             schedule.every().__getattribute__(day).at("09:30").do(get_portfolio_details)
             schedule.every().__getattribute__(day).at("15:00").do(get_portfolio_details)
 
