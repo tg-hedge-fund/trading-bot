@@ -13,6 +13,7 @@ from api_utils.wrapper_api import app
 from strategies.golden_cross import (
     get_crossover_for_all_indices,
 )
+from strategies.portfolio_summary import get_portfolio_details
 from utils.constants import MESSAGE_TYPES
 from utils.discord_bot import (
     send_message_via_discord_bot,
@@ -108,6 +109,25 @@ def run_golden_cross_schedule():
         logger.error(f"Error in golden cross schedule thread: {e}", exc_info=True)
 
 
+def run_portfolio_summary_schedule():
+    try:
+        logger.info("Starting portfolio summary schedule thread")
+        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
+            # use only for testing
+            schedule.every().__getattribute__(day).at((datetime.now() + timedelta(minutes=1)).strftime("%H:%M")).do(get_portfolio_details)
+            schedule.every().__getattribute__(day).at("09:30").do(get_portfolio_details)
+            schedule.every().__getattribute__(day).at("15:00").do(get_portfolio_details)
+
+        while not schedule_shutdown_event.is_set():
+            schedule.run_pending()
+            if schedule_shutdown_event.wait(5):
+                break
+        logger.info("Portfolio summary schedule thread shutting down gracefully")
+    except Exception as e:
+        send_message_via_discord_bot(f"Error in portfolio summary schedule thread: {e}", MESSAGE_TYPES.LOGS)
+        logger.error(f"Error in portfolio summary schedule thread: {e}", exc_info=True)
+
+
 def discord_bot_heartbeat():
     def send_heartbeat():
         send_message_via_discord_bot("HEARTBEAT", MESSAGE_TYPES.HEARTBEAT)
@@ -191,6 +211,9 @@ if __name__ == "__main__":
         if config.get("golden_cross_schedule"):
             threads.append(run_thread(run_golden_cross_schedule,name="run_golden_cross_schedule"))
             logger.info("Golden cross schedule thread started")
+
+        threads.append(run_thread(run_portfolio_summary_schedule, name="run_portfolio_summary_schedule"))
+        logger.info("Portfolio summary schedule thread started")
 
         if not threads:
             logger.warning("No threads were configured to run")
