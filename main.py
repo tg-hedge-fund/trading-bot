@@ -1,8 +1,8 @@
 import asyncio
-from datetime import datetime, timedelta
 import os
 import signal
 import sys
+from datetime import datetime, timedelta
 from threading import Event
 
 import schedule
@@ -30,6 +30,7 @@ from utils.utils import config, logger, run_thread
 
 # Global event for graceful shutdown
 schedule_shutdown_event = Event()
+
 threads = []
 uvicorn_server = None
 
@@ -111,16 +112,17 @@ def run_golden_cross_schedule():
 
 def run_portfolio_summary_schedule():
     try:
+        pf_scheduler = schedule.Scheduler()
         logger.info("Starting portfolio summary schedule thread")
-        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']:
+        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
             # use only for testing
-            # schedule.every().__getattribute__(day).at((datetime.now() + timedelta(minutes=1)).strftime("%H:%M")).do(get_portfolio_details)
-            schedule.every().__getattribute__(day).at("09:30").do(get_portfolio_details)
-            schedule.every().__getattribute__(day).at("15:00").do(get_portfolio_details)
+            # pf_scheduler.every().__getattribute__(day).at((datetime.now() + timedelta(minutes=1)).strftime("%H:%M")).do(get_portfolio_details)
+            pf_scheduler.every().__getattribute__(day).at("09:30").do(get_portfolio_details)
+            pf_scheduler.every().__getattribute__(day).at("15:00").do(get_portfolio_details)
 
         while not schedule_shutdown_event.is_set():
-            schedule.run_pending()
-            if schedule_shutdown_event.wait(5):
+            pf_scheduler.run_pending()
+            if schedule_shutdown_event.wait(60):
                 break
         logger.info("Portfolio summary schedule thread shutting down gracefully")
     except Exception as e:

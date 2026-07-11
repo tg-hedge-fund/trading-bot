@@ -36,6 +36,28 @@ class DiscordClient(discord.Client):
         if message.content.startswith('$hello'):
             await message.channel.send('Hello!')
 
+        if message.content.startswith("/"):
+            message_from_user = message.content[1:].strip()
+            if message_from_user == "help":
+                help_message = "\n".join([
+                    "**Available commands:**",
+                    "  `/predict-quarterly <company name>` — quarterly prediction",
+                    "  `/ema-cross <company name>` — EMA crossover check",
+                    "  `/value <company name>` — company valuation",
+                ])
+                await message.channel.send(help_message)
+
+
+            if message_from_user == "predict-quarterly":
+                # this one should send a grpc call to the valuation engine and give the results
+                pass
+            elif message_from_user == "ema-cross":
+                # this one should calculate the ema cross of the company and give the results
+                pass
+            elif message_from_user == "value":
+                # this one should send a grpc call to the valuation engine and give out the results
+                pass
+
     async def _message_worker(self):
         logger.info("Message worker started")
         while True:
