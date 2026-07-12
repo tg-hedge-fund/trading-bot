@@ -1,4 +1,5 @@
 from pathlib import Path
+import time
 
 import pyotp
 from growwapi import GrowwAPI, GrowwFeed
@@ -17,6 +18,7 @@ def generate_token():
     except Exception:
         send_message_via_discord_bot("Error generating access token from Groww, trying again!", MESSAGE_TYPES.LOGS)
         try:
+            time.sleep(1)
             access_token = GrowwAPI.get_access_token(api_key, totp)
         except Exception:
             send_message_via_discord_bot("Error generating access token from Groww", MESSAGE_TYPES.LOGS)

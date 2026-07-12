@@ -2,7 +2,6 @@ import asyncio
 import os
 import signal
 import sys
-from datetime import datetime, timedelta
 from threading import Event
 
 import schedule
@@ -22,8 +21,8 @@ from utils.discord_bot import (
 )
 from utils.jobs import (
     generate_token_every_morning,
+    run_job_every_mon_fri,
     run_job_everyday,
-    scheduled_jobs_instrument,
     shutdown_job_executor,
 )
 from utils.utils import config, logger, run_thread
@@ -67,41 +66,30 @@ def shutdown_uvicorn_server():
 
 
 # schedules
-def run_instrument_and_token_schedule():
+def run_token_generator_schedule():
     try:
-        if config.get("instrument_and_eq_schedule"):
-            schedule.every().sunday.do(scheduled_jobs_instrument, "IDX")
-            schedule.every().sunday.do(scheduled_jobs_instrument, "EQ")
-        run_job_everyday("07:00", generate_token_every_morning)
-        run_job_everyday("07:01", refresh_groww_credentials)
-
-        # Run the scheduler loop continuously
+        token_scheduler = schedule.Scheduler()
+        run_job_everyday(token_scheduler, "07:00", generate_token_every_morning)
+        run_job_everyday(token_scheduler, "07:01", refresh_groww_credentials)
         while not schedule_shutdown_event.is_set():
-            schedule.run_pending()
-            if schedule_shutdown_event.wait(60):
+            token_scheduler.run_pending()
+            if schedule_shutdown_event.wait(5):
                 break
-        logger.info("Instrument and token schedule thread shutting down gracefully")
+        logger.info("Token scheduler thread shutting down gracefully")
     except Exception as e:
         send_message_via_discord_bot(f"Error in instrument and token schedule thread: {e}", MESSAGE_TYPES.LOGS)
         logger.error(f"Error in instrument and token schedule thread: {e}", exc_info=True)
 
 
 def run_golden_cross_schedule():
+    golden_cross_scheduler = schedule.Scheduler()
     try:
         logger.info("Starting golden cross schedule thread")
-        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']:
-            # use only for testing
-            # schedule.every().__getattribute__(day).at((datetime.now() + timedelta(minutes=1)).strftime("%H:%M")).do(get_crossover_for_all_indices)
-            schedule.every().__getattribute__(day).at("09:00").do(get_crossover_for_all_indices)
-            schedule.every().__getattribute__(day).at("10:00").do(get_crossover_for_all_indices)
-            schedule.every().__getattribute__(day).at("11:00").do(get_crossover_for_all_indices)
-            schedule.every().__getattribute__(day).at("12:00").do(get_crossover_for_all_indices)
-            schedule.every().__getattribute__(day).at("13:00").do(get_crossover_for_all_indices)
-            schedule.every().__getattribute__(day).at("14:00").do(get_crossover_for_all_indices)
-            schedule.every().__getattribute__(day).at("15:00").do(get_crossover_for_all_indices)
+        for time in ["09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00"]:
+            run_job_every_mon_fri(golden_cross_scheduler, time, get_crossover_for_all_indices)
 
         while not schedule_shutdown_event.is_set():
-            schedule.run_pending()
+            golden_cross_scheduler.run_pending()
             if schedule_shutdown_event.wait(5):
                 break
         logger.info("Golden cross schedule thread shutting down gracefully")
@@ -114,11 +102,7 @@ def run_portfolio_summary_schedule():
     try:
         pf_scheduler = schedule.Scheduler()
         logger.info("Starting portfolio summary schedule thread")
-        for day in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']:
-            # use only for testing
-            # pf_scheduler.every().__getattribute__(day).at((datetime.now() + timedelta(minutes=1)).strftime("%H:%M")).do(get_portfolio_details)
-            pf_scheduler.every().__getattribute__(day).at("09:30").do(get_portfolio_details)
-            pf_scheduler.every().__getattribute__(day).at("15:00").do(get_portfolio_details)
+        run_job_everyday(pf_scheduler, "16:00", get_portfolio_details)
 
         while not schedule_shutdown_event.is_set():
             pf_scheduler.run_pending()
@@ -131,15 +115,16 @@ def run_portfolio_summary_schedule():
 
 
 def discord_bot_heartbeat():
+    heartbeat_scheduler = schedule.Scheduler()
     def send_heartbeat():
         send_message_via_discord_bot("HEARTBEAT", MESSAGE_TYPES.HEARTBEAT)
 
     try:
         logger.info("Starting Heartbeat Thread")
-        schedule.every(5).minutes.do(send_heartbeat)
+        heartbeat_scheduler.every(5).minutes.do(send_heartbeat)
 
         while not schedule_shutdown_event.is_set():
-            schedule.run_pending()
+            heartbeat_scheduler.run_pending()
             if schedule_shutdown_event.wait(60):
                 break
         logger.info("Discord bot heartbeat thread shutting down gracefully")
@@ -204,7 +189,7 @@ if __name__ == "__main__":
         # logger.info(f"Wrapper API thread started on {WRAPPER_API_HOST}:{WRAPPER_API_PORT}")
 
         # Start scheduler threads
-        threads.append(run_thread(run_instrument_and_token_schedule, name="run_instrument_and_token_schedule"))
+        threads.append(run_thread(run_token_generator_schedule, name="run_token_generator_schedule"))
         logger.info("Instrument and token schedule thread started")
 
         threads.append(run_thread(discord_bot_heartbeat,name="discord_bot_heartbeat"))

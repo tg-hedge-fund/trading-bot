@@ -5,7 +5,6 @@ db:
   host: 127.0.0.1
   port: 5432
 
-instrument_and_eq_schedule: True
 golden_cross_schedule: True
 
 auth:

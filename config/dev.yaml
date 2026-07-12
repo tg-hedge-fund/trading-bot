@@ -13,7 +13,6 @@ auth:
     hash_len: 16
     salt_len: 16
 
-instrument_and_token_schedule: False
 golden_cross_schedule: True
 
 wrapper_api:
