@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS "primary".instrument_idx (
     sell_allowed integer,
     internal_trading_symbol character varying(255),
     is_intraday integer,
-    creation_ts timestamp with time zone DEFAULT (now() AT TIME ZONE 'UTC'::text)
+    creation_ts timestamp with time zone DEFAULT now()
 );
 
 

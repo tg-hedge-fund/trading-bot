@@ -50,7 +50,7 @@ CREATE TABLE IF NOT EXISTS "primary".instrument_eq (
     internal_trading_symbol character varying(255),
     is_intraday integer,
     market_cap double precision,
-    creation_ts timestamp with time zone DEFAULT (now() AT TIME ZONE 'UTC'::text)
+    creation_ts timestamp with time zone DEFAULT now()
 );
 
 

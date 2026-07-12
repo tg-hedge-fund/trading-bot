@@ -48,14 +48,14 @@ def save_instrument_eq():
             try:
                 cursor.execute(
                     """
-                    INSERT INTO instrument_eq (
+                    INSERT INTO "primary".instrument_eq (
                         exchange, exchange_token, trading_symbol, groww_symbol, name,
                         instrument_type, segment, series, isin, underlying_symbol,
                         underlying_exchange_token, expiry_date, strike_price, lot_size,
                         tick_size, freeze_quantity, is_reserved, buy_allowed, sell_allowed,
                         internal_trading_symbol, is_intraday
                     )
-                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                    VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
                     ON CONFLICT (exchange_token, trading_symbol)
                     DO UPDATE SET
                         exchange = EXCLUDED.exchange,
@@ -77,6 +77,7 @@ def save_instrument_eq():
                         sell_allowed = EXCLUDED.sell_allowed,
                         internal_trading_symbol = EXCLUDED.internal_trading_symbol,
                         is_intraday = EXCLUDED.is_intraday,
+                        creation_ts = now()
                     """,
                     (
                         _cast_value(instrument["exchange"], 'varchar'),
@@ -125,7 +126,7 @@ def save_instrument_idx():
             try:
                 cursor.execute(
                     """
-                    INSERT INTO instrument_idx (
+                    INSERT INTO "primary".instrument_idx (
                         exchange, exchange_token, trading_symbol, groww_symbol, name,
                         instrument_type, segment, series, isin, underlying_symbol,
                         underlying_exchange_token, expiry_date, strike_price, lot_size,
@@ -153,7 +154,8 @@ def save_instrument_idx():
                         buy_allowed = EXCLUDED.buy_allowed,
                         sell_allowed = EXCLUDED.sell_allowed,
                         internal_trading_symbol = EXCLUDED.internal_trading_symbol,
-                        is_intraday = EXCLUDED.is_intraday
+                        is_intraday = EXCLUDED.is_intraday,
+                        creation_ts = now()
                     """,
                     (
                         _cast_value(instrument["exchange"], 'varchar'),

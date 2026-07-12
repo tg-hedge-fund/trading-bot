@@ -41,7 +41,7 @@ CREATE TABLE "primary".portfolio (
     t1_quantity double precision,
     tradable_exchanges character varying(255),
     trading_symbol character varying(255),
-    creation_ts timestamp with time zone DEFAULT (now() AT TIME ZONE 'UTC'::text)
+    creation_ts timestamp with time zone DEFAULT now()
 );
 
 
