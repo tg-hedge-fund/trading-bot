@@ -44,6 +44,9 @@ class DiscordClient(discord.Client):
                     "  `/predict-quarterly <company name>` — quarterly prediction",
                     "  `/ema-cross <company name>` — EMA crossover check",
                     "  `/value <company name>` — company valuation",
+                    "  `/add <company name>` — add stock to watchlist",
+                    "  `/remove <company name>` — remove stock from watchlist",
+                    "  `/update-instruments` — refresh instrument list",
                 ])
                 await message.channel.send(help_message)
 
@@ -56,6 +59,14 @@ class DiscordClient(discord.Client):
                 pass
             elif message_from_user == "value":
                 # this one should send a grpc call to the valuation engine and give out the results
+                pass
+            elif message_from_user == "add":
+                # adds stocks to watchlist for further tracking, watchlist should be in the database...
+                pass
+            elif message_from_user == "remove":
+                # removes stocks from the watchlist (database)
+                pass
+            elif message_from_user == "update-instruments":
                 pass
 
     async def _message_worker(self):

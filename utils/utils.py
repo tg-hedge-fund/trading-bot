@@ -16,3 +16,7 @@ def run_thread(fn, name, daemon=False, *args):
     t = Thread(target=fn, name=name, daemon=daemon, *args)
     t.start()
     return t
+
+# input is from user, data is a array string
+def levenshtein_distance(input, data):
+    pass
