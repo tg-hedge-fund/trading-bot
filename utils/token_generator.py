@@ -1,4 +1,5 @@
 import hashlib
+import secrets
 import time
 from urllib.parse import parse_qs, urlparse
 
@@ -23,17 +24,23 @@ def login_with_auth_code():
     the refresh token expires (every 15 days).
     """
     creds = read_fyers_credentials()
+    state = secrets.token_urlsafe(16)
     session = fyersModel.SessionModel(
         client_id=creds["client_id"],
         secret_key=creds["secret_key"],
         redirect_uri=creds["redirect_uri"],
         response_type="code",
         grant_type="authorization_code",
+        state=state,
     )
     print("Open this URL, log in, and paste the URL you are redirected to (or just the auth_code):")
     print(session.generate_authcode())
     redirected = input("> ").strip()
-    auth_code = parse_qs(urlparse(redirected).query).get("auth_code", [redirected])[0]
+    params = parse_qs(urlparse(redirected).query)
+    auth_code = params.get("auth_code", [redirected])[0]
+    # Fyers echoes state back on the redirect; reject it if it doesn't match what we sent
+    if "state" in params and params["state"][0] != state:
+        raise RuntimeError("State mismatch in Fyers redirect, aborting login")
 
     session.set_token(auth_code)
     response = session.generate_token()

@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Fyers API Reference</title>
+<style>
+:root {
+  --bg: #fbfaf7; --surface: #ffffff; --text: #1d1f23; --muted: #5d636e; --border: #e3e1db;
+  --accent: #3a5bd9; --accent-bg: #eaeefc; --warn: #9a5b00; --warn-bg: #fff4dc;
+  --ok: #1d7a4f; --ok-bg: #e5f4ec; --code-bg: #f3f1ec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171b; --surface: #1c1f24; --text: #e7e8ea; --muted: #a1a7b1; --border: #2e323a;
+    --accent: #93a8ff; --accent-bg: #1f2747; --warn: #f3c46b; --warn-bg: #352a12;
+    --ok: #6fd3a0; --ok-bg: #16301f; --code-bg: #24272d;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171b; --surface: #1c1f24; --text: #e7e8ea; --muted: #a1a7b1; --border: #2e323a;
+  --accent: #93a8ff; --accent-bg: #1f2747; --warn: #f3c46b; --warn-bg: #352a12;
+  --ok: #6fd3a0; --ok-bg: #16301f; --code-bg: #24272d;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+.layout { display: grid; grid-template-columns: 230px minmax(0, 1fr); max-width: 1180px; margin: 0 auto; }
+aside { position: sticky; top: 0; align-self: start; height: 100vh; overflow-y: auto;
+  padding: 32px 16px; border-right: 1px solid var(--border); font-size: 14px; }
+aside b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); margin: 16px 0 6px; }
+aside a { display: block; color: var(--text); text-decoration: none; padding: 3px 8px; border-radius: 6px; }
+aside a:hover { background: var(--accent-bg); color: var(--accent); }
+main { padding: 32px 16px 80px 40px; min-width: 0; }
+@media (max-width: 800px) {
+  .layout { grid-template-columns: 1fr; }
+  aside { position: static; height: auto; border-right: none; border-bottom: 1px solid var(--border); padding: 16px; }
+  main { padding: 24px 16px 64px; }
+}
+h1 { font-size: 30px; margin: 0 0 6px; }
+h2 { font-size: 21px; margin: 44px 0 12px; padding-top: 10px; border-top: 1px solid var(--border); }
+h3 { font-size: 16px; margin: 26px 0 8px; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+a { color: var(--accent); }
+code { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg); padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
+pre code { background: none; padding: 0; }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); margin: 10px 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 8px 12px; border-bottom: 1px solid var(--border); }
+th { font-weight: 600; color: var(--muted); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+tr:last-child td { border-bottom: none; }
+.used { display: inline-block; font-size: 11.5px; font-weight: 600; padding: 0 7px; border-radius: 99px;
+  background: var(--ok-bg); color: var(--ok); margin-left: 6px; vertical-align: 1px; }
+.method { font: 600 11.5px ui-monospace, monospace; padding: 1px 6px; border-radius: 4px; background: var(--accent-bg); color: var(--accent); }
+.callout { background: var(--warn-bg); border-left: 4px solid var(--warn); border-radius: 6px; padding: 12px 16px; margin: 14px 0; }
+.callout strong { color: var(--warn); }
+.note { background: var(--accent-bg); border-left: 4px solid var(--accent); border-radius: 6px; padding: 12px 16px; margin: 14px 0; }
+</style>
+</head>
+<body>
+<div class="layout">
+<aside>
+  <b>Basics</b>
+  <a href="#overview">Overview</a>
+  <a href="#envelope">Request &amp; response</a>
+  <a href="#errors">Error codes</a>
+  <a href="#limits">Rate limits</a>
+  <a href="#permissions">App permissions</a>
+  <b>Auth</b>
+  <a href="#auth">Login flow</a>
+  <a href="#refresh">Refresh token</a>
+  <b>Python SDK</b>
+  <a href="#sdk">FyersModel</a>
+  <a href="#catalog">Endpoint catalog</a>
+  <b>Used by trading-bot</b>
+  <a href="#history">History</a>
+  <a href="#quotes">Quotes</a>
+  <a href="#holdings">Holdings</a>
+  <b>Trading</b>
+  <a href="#orders">Placing orders</a>
+  <a href="#enums">Enums</a>
+  <b>Symbols &amp; data</b>
+  <a href="#symbology">Symbology</a>
+  <a href="#master">Symbol master</a>
+  <a href="#market-status">Market status</a>
+  <a href="#websocket">WebSocket</a>
+  <a href="#changelog">Recent changes</a>
+</aside>
+<main>
+  <h1>Fyers API v3: quick reference</h1>
+  <p class="sub">Condensed from the official docs (<code>API-FYERS.HTML</code>, change log up to 01 Oct 2026) for use with this bot. <span class="used">used</span> marks what the bot calls today.</p>
+
+  <h2 id="overview">Overview</h2>
+  <div class="table-wrap"><table>
+    <tbody>
+      <tr><th>Trading API base</th><td><code>https://api-t1.fyers.in/api/v3</code></td></tr>
+      <tr><th>Data API base</th><td><code>https://api-t1.fyers.in/data</code></td></tr>
+      <tr><th>Python SDK</th><td><code>pip install fyers-apiv3</code> (latest documented: v3.1.17). Officially supports Python 3.8–3.12. This venv runs 3.14 and works in testing</td></tr>
+      <tr><th>SDK pins</th><td><code>aiohttp==3.9.3</code>, <code>requests==2.31.0</code>. These clash with packages that need newer versions</td></tr>
+      <tr><th>Transport</th><td>HTTPS only. Symbols with special characters (e.g. <code>M&amp;M</code>) must be URL-encoded in raw URLs; the SDK does this for you</td></tr>
+      <tr><th>Token expiry</th><td>Access tokens expire <strong>daily at 06:30 AM</strong>. Generate after 06:30 for a full-day token</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="envelope">Request &amp; response structure</h2>
+  <p>Every authenticated request sends the app id and access token in one header:</p>
+<pre><code>Authorization: &lt;app_id&gt;:&lt;access_token&gt;        e.g.  Authorization: aaa-99:bbb</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Outcome</th><th>s</th><th>code</th><th>message</th><th>Extra</th></tr></thead>
+    <tbody>
+      <tr><td>Success</td><td><code>"ok"</code></td><td><code>200</code></td><td><code>""</code></td><td>Endpoint-specific key(s), e.g. <code>candles</code>, <code>d</code>, <code>holdings</code></td></tr>
+      <tr><td>Failure</td><td><code>"error"</code></td><td>negative int</td><td>error text</td><td>HTTP status set as in the table below</td></tr>
+    </tbody>
+  </table></div>
+  <div class="note">Errors often come back as a normal JSON body, not an SDK exception. Always check <code>response["s"] == "ok"</code>. <code>fyers_api_handlers._check_response</code> does this.</div>
+
+  <h2 id="errors">Error codes</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>HTTP</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>200</td><td>OK</td></tr><tr><td>400</td><td>Bad request</td></tr>
+      <tr><td>401</td><td>Authentication failed</td></tr><tr><td>403</td><td>Missing permission</td></tr>
+      <tr><td>429</td><td>Rate limit exceeded</td></tr><tr><td>500</td><td>Server error</td></tr>
+    </tbody>
+  </table></div>
+  <div class="table-wrap"><table>
+    <thead><tr><th>API code</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>-8</code></td><td>Token expired</td></tr>
+      <tr><td><code>-15</code></td><td>Invalid token</td></tr>
+      <tr><td><code>-16</code></td><td>Server unable to authenticate token</td></tr>
+      <tr><td><code>-17</code></td><td>Token invalid or expired</td></tr>
+      <tr><td><code>-50</code></td><td>Invalid parameter(s); <code>message</code> lists which</td></tr>
+      <tr><td><code>-51</code></td><td>Invalid order id</td></tr>
+      <tr><td><code>-53</code></td><td>Invalid position id</td></tr>
+      <tr><td><code>-99</code></td><td>Order rejected (reason in message)</td></tr>
+      <tr><td><code>-300</code></td><td>Invalid symbol</td></tr>
+      <tr><td><code>-352</code></td><td>Invalid app id, or no position to exit</td></tr>
+      <tr><td><code>-429</code></td><td>Rate limit exceeded (per second / minute / day)</td></tr>
+    </tbody>
+  </table></div>
+  <p>Codes <code>-8</code>, <code>-15</code>, <code>-16</code> and <code>-17</code> mean the token is bad: re-run the 07:00 refresh or <code>generate_token.py</code>.</p>
+
+  <h2 id="limits">Rate limits</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Window</th><th>Standard (free)</th><th>Prime</th></tr></thead>
+    <tbody>
+      <tr><td>Per second</td><td>10</td><td>10</td></tr>
+      <tr><td>Per minute</td><td>200</td><td>600</td></tr>
+      <tr><td>Per day</td><td>100,000</td><td>200,000</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout"><strong>User blocking:</strong> going over the per-minute limit more than 3 times in a day blocks the user for the rest of the day. Order APIs also return HTTP 429 when throttled. WebSocket: up to 5,000 subscriptions and only one connection instance at a time.</div>
+  <p>Bot budget: a Golden Cross run makes 13 indices × (2 history chunks + 1 quote) = 39 calls. The 0.5 s stagger between submissions and 3 workers keep this well under 10 per second.</p>
+
+  <h2 id="permissions">App permission templates</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Template</th><th>Allows</th><th>Bot needs?</th></tr></thead>
+    <tbody>
+      <tr><td>Basic</td><td>Profile, logout</td><td>Yes</td></tr>
+      <tr><td>Transactions Info</td><td>Orders, positions, trades, holdings, funds, market status</td><td>Yes (holdings)</td></tr>
+      <tr><td>Order Placement</td><td>Place / modify / cancel orders, exit &amp; convert positions</td><td><strong>No</strong>: leave off until the bot trades</td></tr>
+      <tr><td>Market Data</td><td>Historical data, depth, quotes</td><td>Yes</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="auth">Login flow (user apps)</h2>
+  <ol>
+    <li><strong>Get an auth code.</strong> <span class="method">GET</span> <code>/api/v3/generate-authcode?client_id=&lt;APP_ID&gt;&amp;redirect_uri=&lt;URI&gt;&amp;response_type=code&amp;state=&lt;random&gt;</code>. The user logs in, and Fyers redirects to <code>redirect_uri?auth_code=...&amp;state=...</code>. Check that <code>state</code> matches what you sent.</li>
+    <li><strong>Exchange it for tokens.</strong> <span class="method">POST</span> <code>/api/v3/validate-authcode</code></li>
+  </ol>
+<pre><code>{ "grant_type": "authorization_code",
+  "appIdHash":  sha256("&lt;app_id&gt;:&lt;app_secret&gt;").hexdigest(),
+  "code":       "&lt;auth_code&gt;" }
+→ { "s": "ok", "code": 200, "access_token": "...", "refresh_token": "..." }</code></pre>
+  <p>SDK equivalent (what <code>utils/token_generator.login_with_auth_code</code> does):</p>
+<pre><code>session = fyersModel.SessionModel(client_id=APP_ID, secret_key=SECRET, redirect_uri=URI,
+                                  response_type="code", grant_type="authorization_code", state=state)
+url = session.generate_authcode()      # open in browser
+session.set_token(auth_code)
+tokens = session.generate_token()</code></pre>
+  <p>Best practices: never share <code>app_secret</code> or <code>access_token</code>; don't grant trading permission unless needed; use a <code>redirect_uri</code> you control; always send and check a random <code>state</code>.</p>
+
+  <h3 id="refresh">Refresh token</h3>
+  <p><span class="method">POST</span> <code>/api/v3/validate-refresh-token</code>. The refresh token is valid for <strong>15 days</strong>.</p>
+<pre><code>{ "grant_type": "refresh_token", "appIdHash": "...", "refresh_token": "...", "pin": "&lt;user PIN&gt;" }
+→ { "s": "ok", "code": 200, "access_token": "..." }</code></pre>
+  <div class="callout"><strong>Deprecation warning:</strong> the docs say <em>"Refresh token will be discontinued from 1st April"</em>, with a separate "Regulatory Changes (April 2026)" page that applies SEBI's retail-algo rules. If it has already been switched off, the bot's 07:00 refresh will fail every day and a fresh login (step 1) will be needed daily. Check the live regulatory page.</div>
+
+  <h2 id="sdk">Python SDK: FyersModel</h2>
+<pre><code>from fyers_apiv3 import fyersModel
+fyers = fyersModel.FyersModel(client_id="XXXX-100", token=access_token,
+                              is_async=False, log_path=None, log_level="ERROR")</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Arg</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td><code>client_id</code></td><td>App id, e.g. <code>XXXX-100</code></td></tr>
+      <tr><td><code>token</code></td><td>Access token only, <em>not</em> <code>app_id:token</code>. The SDK builds the header</td></tr>
+      <tr><td><code>is_async</code></td><td><code>True</code> makes methods return coroutines (aiohttp)</td></tr>
+      <tr><td><code>log_path</code></td><td>Directory for <code>fyersApi.log</code> and <code>fyersRequests.log</code>. Defaults to the current working directory. The request log is always DEBUG and grows with every call</td></tr>
+      <tr><td><code>log_level</code></td><td><code>ERROR</code> (default) or <code>DEBUG</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="catalog">Endpoint catalog</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Area</th><th>SDK method</th><th>REST</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr><td>User</td><td><code>get_profile()</code></td><td><span class="method">GET</span> /api/v3/profile</td><td>PII (mobile, email, PAN) masked; includes TOTP / DDPI / MTF status. Cheap way to check a token is valid</td></tr>
+      <tr><td></td><td><code>funds()</code></td><td><span class="method">GET</span> /api/v3/funds</td><td>Fund limits</td></tr>
+      <tr><td></td><td><code>holdings()</code> <span class="used">used</span></td><td><span class="method">GET</span> /api/v3/holdings</td><td><a href="#holdings">see below</a></td></tr>
+      <tr><td></td><td><code>logout()</code></td><td><span class="method">POST</span> /api/v3/logout</td><td>Revokes the token for this app only</td></tr>
+      <tr><td>Transactions</td><td><code>tradebook()</code></td><td><span class="method">GET</span> /api/v3/tradebook</td><td>Today's trades; filter by order tag</td></tr>
+      <tr><td></td><td><code>orderbook(data)</code></td><td><span class="method">GET</span> /api/v3/orders</td><td>Filter by <code>id</code> or <code>order_tag</code></td></tr>
+      <tr><td></td><td><code>positions()</code></td><td><span class="method">GET</span> /api/v3/positions</td><td>Per-position plus overall</td></tr>
+      <tr><td>Reports</td><td><code>orderhistory</code>, <code>tradehistory</code>, <code>charges_history</code>, <code>realised_profit_history</code>, <code>tax_pnl_history</code>, <code>ledger_history</code></td><td>/order-history, /trade-history, /charges-history, /realised-pnl-history, /tax-pnl-history, /ledger-history</td><td>Historical reports (added 2026)</td></tr>
+      <tr><td>Orders (sync)</td><td><code>place_order</code>, <code>modify_order</code>, <code>cancel_order</code></td><td>/api/v3/orders/sync</td><td>Also <code>place_multileg_order</code>, multi-order and basket variants</td></tr>
+      <tr><td>Orders (async)</td><td>REST only</td><td>/api/v3/orders/async, /multi-order/async</td><td>Queued at 10 OPS; immediate response has only <code>id_fyers</code>; result arrives via order WebSocket</td></tr>
+      <tr><td>GTT</td><td><code>place_gtt_order</code>, <code>modify_gtt_order</code>, <code>cancel_gtt_order</code>, <code>gtt_orderbook</code></td><td>/api/v3/gtt/orders(/sync)</td><td></td></tr>
+      <tr><td>Smart orders</td><td><code>create_smart_order_{step,limit,trail,sip}</code>, modify / cancel / pause / resume, <code>smart_orderbook_with_filter</code></td><td>/api/v3/smart-order/*</td><td>Added Apr 2026</td></tr>
+      <tr><td>Positions</td><td><code>exit_positions</code>, <code>convert_position</code></td><td>/api/v3/positions</td><td>PATCH to set, modify or cancel SL/TP on an open position</td></tr>
+      <tr><td>Broker</td><td><code>market_status()</code></td><td><span class="method">GET</span> /api/v3/marketStatus</td><td><a href="#market-status">see below</a></td></tr>
+      <tr><td>Data</td><td><code>history(data)</code> <span class="used">used</span></td><td><span class="method">GET</span> /data/history</td><td><a href="#history">see below</a></td></tr>
+      <tr><td></td><td><code>quotes(data)</code> <span class="used">used</span></td><td><span class="method">GET</span> /data/quotes</td><td><a href="#quotes">see below</a></td></tr>
+      <tr><td></td><td><code>depth(data)</code></td><td><span class="method">GET</span> /data/depth</td><td>Market depth</td></tr>
+      <tr><td></td><td><code>optionchain(data)</code></td><td><span class="method">GET</span> /data/options-chain-v3</td><td>Greeks supported</td></tr>
+      <tr><td></td><td><code>futures_chain(data)</code></td><td><span class="method">GET</span> /data/futures-chain</td><td>Futures for an underlying</td></tr>
+      <tr><td></td><td><code>expiry_dates</code>, <code>history_underlying_symbols</code>, <code>fno_historical_data</code></td><td>/data/history/fno/expired/*</td><td>Expired F&amp;O contracts</td></tr>
+      <tr><td>Alerts</td><td><code>create_alert</code>, <code>get_alert</code>, <code>update_alert</code>, <code>delete_alert</code>, <code>toggle_alert</code></td><td>/api/v3/price-alert, /toggle-alert</td><td>Server-side price alerts</td></tr>
+      <tr><td>Screeners</td><td><code>screeners_config/query/candlestick/technical</code></td><td>/screeners/*</td><td></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="history">History <span class="used">used</span></h2>
+<pre><code>fyers.history(data={
+    "symbol": "NSE:NIFTY50-INDEX",
+    "resolution": "60",          # see table
+    "date_format": "0",          # 0 = epoch seconds, 1 = yyyy-mm-dd
+    "range_from": "1747000000",
+    "range_to":   "1760000000",
+    "cont_flag": "1",            # continuous data for futures/options
+    # "oi_flag": "1",            # include open interest
+})
+→ {"s": "ok", "candles": [[epoch, open, high, low, close, volume], ...]}</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Resolution values</th><th>Max range per request</th></tr></thead>
+    <tbody>
+      <tr><td><code>5S 10S 15S 30S 45S</code> (seconds)</td><td>Last 30 trading days only</td></tr>
+      <tr><td><code>1 2 3 5 10 15 20 30 45 60 120 180 240</code> (minutes)</td><td><strong>100 days</strong>; data from 3 Jul 2017</td></tr>
+      <tr><td><code>D / 1D</code>, <code>1W</code>, <code>1M</code></td><td>366 days</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Partial candles:</strong> to get only completed candles, set <code>range_to</code> to now minus one resolution period. The bot uses now − 1 h for 60-minute candles. There is no daily download limit on history.</p>
+  <p>Bot wrapper: <code>get_historical_data(symbol, resolution, range_from: datetime, range_to: datetime)</code> splits ranges longer than the limit into chunks, removes duplicate candles by timestamp, and returns <code>{"candles": [...]}</code> or <code>None</code>.</p>
+
+  <h2 id="quotes">Quotes <span class="used">used</span></h2>
+<pre><code>fyers.quotes(data={"symbols": "NSE:SBIN-EQ,NSE:NIFTY50-INDEX"})   # max 50 symbols
+→ {"s": "ok", "code": 200, "d": [{"n": "NSE:SBIN-EQ", "s": "ok", "v": {...}}]}</code></pre>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Field in <code>v</code></th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>lp</code></td><td>Last traded price (what the bot uses)</td></tr>
+      <tr><td><code>ch</code> / <code>chp</code></td><td>Change / % change vs previous close</td></tr>
+      <tr><td><code>open_price high_price low_price prev_close_price</code></td><td>Day OHLC and previous close</td></tr>
+      <tr><td><code>bid ask spread</code></td><td>Top of book</td></tr>
+      <tr><td><code>atp volume</code></td><td>Average traded price, volume</td></tr>
+      <tr><td><code>imbalance mkt_imbalance reference_price indicative_price</code></td><td>Closing Auction Session data (Oct 2026); 0 / LTP when CAS does not apply</td></tr>
+      <tr><td><code>short_name exchange description symbol fyToken tt</code></td><td>Metadata; <code>tt</code> = time of the quote</td></tr>
+    </tbody>
+  </table></div>
+  <p>Bot wrapper: <code>get_quote(symbol)</code> returns the <code>v</code> dict or <code>None</code>. To cut API calls, batch up to 50 symbols in one request.</p>
+
+  <h2 id="holdings">Holdings <span class="used">used</span></h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Per holding</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>symbol</code></td><td>e.g. <code>NSE:RCOM-EQ</code></td></tr>
+      <tr><td><code>holdingType</code></td><td><code>T1</code> (bought, not yet delivered) or <code>HLD</code> (in demat)</td></tr>
+      <tr><td><code>quantity</code> / <code>remainingQuantity</code></td><td>Quantity at start of day / after today's sells</td></tr>
+      <tr><td><code>costPrice</code></td><td>Average buy price</td></tr>
+      <tr><td><code>ltp</code> / <code>marketVal</code> / <code>pl</code></td><td>Last price, market value, P&amp;L</td></tr>
+      <tr><td><code>qty_t1 remainingPledgeQuantity collateralQuantity</code></td><td>T+1 and pledge details</td></tr>
+      <tr><td><code>id fytoken exchange segment isin</code></td><td>Identifiers</td></tr>
+    </tbody>
+  </table></div>
+  <p><code>overall</code>: <code>count_total</code>, <code>total_investment</code>, <code>total_current_value</code>, <code>total_pl</code>, <code>pnl_perc</code>.</p>
+
+  <h2 id="orders">Placing orders (for later)</h2>
+<pre><code>fyers.place_order(data={
+    "symbol": "NSE:SBIN-EQ", "qty": 1,
+    "type": 2,                 # 1 limit, 2 market, 3 SL-M, 4 SL-L
+    "side": 1,                 # 1 buy, -1 sell
+    "productType": "CNC",      # CNC | INTRADAY | MARGIN | MTF
+    "limitPrice": 0, "stopPrice": 0,
+    "validity": "DAY",         # DAY | IOC
+    "disclosedQty": 0, "offlineOrder": False,   # True = AMO
+    "stopLoss": 0, "takeProfit": 0,
+    "orderTag": "tghf", "isSliceOrder": False,
+})</code></pre>
+  <ul>
+    <li>Cover Order (CO) and Bracket Order (BO) are deprecated and get rejected. Use <code>stopLoss</code>/<code>takeProfit</code> on a normal order instead.</li>
+    <li>SL-M / SL-L: <code>stopPrice</code> must not be above LTP for a sell or below LTP for a buy. For SL-L buys, <code>stopPrice</code> must be below <code>limitPrice</code>.</li>
+    <li>Derivative quantities must be multiples of the lot size. <code>isSliceOrder</code> splits orders above the freeze quantity.</li>
+    <li>SEBI retail-algo rules (from April 2026) add order-type restrictions and app activation requirements. Check the regulatory page first.</li>
+  </ul>
+
+  <h2 id="enums">Enums</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Field</th><th>Values</th></tr></thead>
+    <tbody>
+      <tr><td>Order type</td><td>1 Limit · 2 Market · 3 Stop (SL-M) · 4 Stop-limit (SL-L)</td></tr>
+      <tr><td>Order side</td><td>1 Buy · −1 Sell</td></tr>
+      <tr><td>Order status</td><td>1 Cancelled · 2 Traded/Filled · 3 (reserved) · 4 Transit · 5 Rejected · 6 Pending</td></tr>
+      <tr><td>Position side</td><td>1 Long · −1 Short · 0 Closed</td></tr>
+      <tr><td>Product type</td><td>CNC (equity delivery) · INTRADAY · MARGIN (derivatives carry-forward) · MTF</td></tr>
+      <tr><td>Holding type</td><td>T1 · HLD</td></tr>
+      <tr><td>Order source</td><td>M Mobile · W Web · R Fyers One · A Admin · ITS API</td></tr>
+      <tr><td>Exchange code</td><td>10 NSE · 11 MCX · 12 BSE</td></tr>
+      <tr><td>Segment code</td><td>10 Capital Market · 11 Equity Derivatives · 12 Currency Derivatives · 20 Commodity Derivatives</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>Fytoken</strong> = exchange (2 digits) + segment (2 digits) + expiry YYMMDD (6 digits) + exchange token (2–6 digits). Example: <code>101000000016921</code> is NSE · CM · no expiry · token 16921.</p>
+
+  <h2 id="symbology">Symbology</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Instrument</th><th>Format</th><th>Examples</th></tr></thead>
+    <tbody>
+      <tr><td>Equity</td><td><code>{Ex}:{Symbol}-{Series}</code></td><td>NSE:SBIN-EQ, NSE:MODIRUBBER-BE, BSE:SBIN-A</td></tr>
+      <tr><td>Index</td><td><code>{Ex}:{Name}-INDEX</code></td><td>NSE:NIFTY50-INDEX, NSE:NIFTYBANK-INDEX, BSE:SENSEX-INDEX</td></tr>
+      <tr><td>Equity futures</td><td><code>{Ex}:{Underlying}{YY}{MMM}FUT</code></td><td>NSE:NIFTY20OCTFUT, BSE:SENSEX23AUGFUT</td></tr>
+      <tr><td>Options (monthly)</td><td><code>{Ex}:{Underlying}{YY}{MMM}{Strike}{CE|PE}</code></td><td>NSE:NIFTY20OCT11000CE</td></tr>
+      <tr><td>Options (weekly)</td><td><code>{Ex}:{Underlying}{YY}{M}{dd}{Strike}{CE|PE}</code></td><td>NSE:NIFTY20O0811000CE, NSE:NIFTY2010811000CE</td></tr>
+      <tr><td>Currency fut / opt</td><td><code>{Ex}:{Pair}{YY}{MMM}FUT</code> etc.</td><td>NSE:USDINR20OCTFUT, NSE:GBPINR20NOV80.5PE</td></tr>
+      <tr><td>Commodity</td><td><code>MCX:{Commodity}{YY}{MMM}FUT</code></td><td>MCX:CRUDEOIL20OCTFUT, MCX:GOLD20DEC40000PE</td></tr>
+    </tbody>
+  </table></div>
+  <p>Weekly month code <code>{M}</code>: Jan–Sep → <code>1</code>–<code>9</code>, Oct → <code>O</code>, Nov → <code>N</code>, Dec → <code>D</code>. <code>{dd}</code> is always 2 digits.</p>
+  <h3>Indices tracked by the bot</h3>
+  <p><code>NSE:NIFTY50-INDEX</code>, <code>NSE:NIFTY100-INDEX</code>, <code>NSE:NIFTYMIDCAP100-INDEX</code>, <code>NSE:NIFTYBANK-INDEX</code>, <code>NSE:NIFTYMETAL-INDEX</code>, <code>NSE:NIFTYPHARMA-INDEX</code>, <code>NSE:NIFTYAUTO-INDEX</code>, <code>NSE:NIFTYFMCG-INDEX</code>, <code>NSE:NIFTYPSUBANK-INDEX</code>, <code>NSE:NIFTYPVTBANK-INDEX</code>, <code>NSE:FINNIFTY-INDEX</code>, <code>NSE:NIFTYREALTY-INDEX</code>, <code>NSE:NIFTYMEDIA-INDEX</code>. Also available: <code>NSE:MIDCPNIFTY-INDEX</code>, <code>NSE:NIFTYMIDCAP150-INDEX</code>, <code>NSE:NIFTYMIDCAP50-INDEX</code>.</p>
+
+  <h2 id="master">Symbol master files</h2>
+  <p>Public, no auth needed.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Segment</th><th>CSV</th><th>JSON</th></tr></thead>
+    <tbody>
+      <tr><td>NSE Capital Market</td><td><code>public.fyers.in/sym_details/NSE_CM.csv</code></td><td><code>NSE_CM_sym_master.json</code></td></tr>
+      <tr><td>NSE Equity Derivatives</td><td><code>NSE_FO.csv</code></td><td><code>NSE_FO_sym_master.json</code></td></tr>
+      <tr><td>NSE Currency Derivatives</td><td><code>NSE_CD.csv</code></td><td><code>NSE_CD_sym_master.json</code></td></tr>
+      <tr><td>NSE Commodity</td><td><code>NSE_COM.csv</code></td><td><code>NSE_COM_sym_master.json</code></td></tr>
+      <tr><td>BSE Capital Market</td><td><code>BSE_CM.csv</code></td><td><code>BSE_CM_sym_master.json</code></td></tr>
+      <tr><td>BSE Equity Derivatives</td><td><code>BSE_FO.csv</code></td><td><code>BSE_FO_sym_master.json</code></td></tr>
+      <tr><td>MCX Commodity</td><td><code>MCX_COM.csv</code></td><td><code>MCX_COM_sym_master.json</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>The CSV has no header row. Column 1 is the Fytoken, column 2 the name, column 10 the Fyers ticker (e.g. <code>NSE:20MICRONS-EQ</code>) and column 14 the exchange symbol. The JSON is keyed by ticker and includes <code>isCasEligible</code>.</p>
+
+  <h2 id="market-status">Market status</h2>
+  <p><code>fyers.market_status()</code> returns one entry per exchange and segment, with <code>market_type</code> (NORMAL, ODD_LOT, CALL_AUCTION2, AUCTION) and <code>status</code>:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td><code>PREOPEN</code></td><td>Pre-open session active</td></tr>
+      <tr><td><code>OPEN</code></td><td>Normal trading</td></tr>
+      <tr><td><code>CLOSE</code></td><td>Closed</td></tr>
+      <tr><td><code>POSTCLOSE_START</code></td><td>Post-close session started</td></tr>
+      <tr><td><code>CTS_CLOSE</code></td><td>Continuous trading ended (CAS-eligible symbols)</td></tr>
+      <tr><td><code>CAS_START</code> / <code>CAS_MKT_ORD_RESTRICT</code> / <code>CAS_END</code></td><td>Closing Auction Session states</td></tr>
+    </tbody>
+  </table></div>
+  <p>Could replace the hard-coded 09:15–15:30 window in <code>golden_cross.py</code> and skip runs on market holidays.</p>
+
+  <h2 id="websocket">WebSocket</h2>
+  <ul>
+    <li><strong>Data socket</strong> (<code>fyers_apiv3.FyersWebsocket.data_ws</code>): symbol, index and depth updates, plus a lite mode with LTP only. Up to 5,000 subscriptions; one instance at a time; runs on its own thread.</li>
+    <li><strong>Order socket</strong> (<code>order_ws</code>): order, trade, position and general updates. Needed to see results of async orders.</li>
+    <li><strong>TBT socket</strong> (<code>tbt_ws</code>): tick-by-tick, 50-level depth. NSE F&amp;O and equity.</li>
+    <li>Set <code>reconnect=True</code> (max 50 retries via <code>reconnect_retry</code>). To change symbols, unsubscribe and resubscribe. <code>write_to_file</code> only works without callbacks.</li>
+  </ul>
+
+  <h2 id="changelog">Recent changes</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Date</th><th>Change</th></tr></thead>
+    <tbody>
+      <tr><td>01 Oct 2026</td><td>Greeks on expired F&amp;O data; CAS fields on Quotes</td></tr>
+      <tr><td>06 Sep 2026</td><td>Expired F&amp;O contracts APIs; Futures Chain. Python SDK v3.1.17</td></tr>
+      <tr><td>13 Aug 2026</td><td>Market status CAS states</td></tr>
+      <tr><td>02–07 Aug 2026</td><td>CO/BO deprecated; set, modify and cancel SL/TP on open positions. SDK v3.1.15</td></tr>
+      <tr><td>05 Jun 2026</td><td>Charges, Tax P&amp;L, Ledger, Realised P&amp;L reports. SDK v3.1.13</td></tr>
+      <tr><td>20 Apr 2026</td><td>Smart orders</td></tr>
+      <tr><td>31 Mar 2026</td><td>Async order placement endpoints</td></tr>
+      <tr><td>27 Mar 2026</td><td>Week / Month resolutions in History</td></tr>
+      <tr><td>09 Mar 2026</td><td>Regulatory changes documented for APIv3</td></tr>
+    </tbody>
+  </table></div>
+  <p>Full source: <code>API-FYERS.HTML</code> in this repo · Migration notes: <a href="FYERS_MIGRATION.html">FYERS_MIGRATION.html</a></p>
+</main>
+</div>
+</body>
+</html>
