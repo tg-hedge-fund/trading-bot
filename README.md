@@ -20,7 +20,7 @@ A lightweight trading assistant that monitors major indices and sends Discord al
 ### Prerequisites
 
 - Python 3.9+
-- Groww API access and credentials configured
+- Fyers API app (client id, secret, redirect URI) and credentials configured
 - Discord bot configured (see `utils/discord_bot.py`)
 
 ### Installation
@@ -31,7 +31,15 @@ A lightweight trading assistant that monitors major indices and sends Discord al
 pip install -r requirements.txt
 ```
 
-2. Verify your Groww credentials and Discord bot configuration.
+2. Create `~/.fyersSecretKey.json` with your Fyers app details and trading PIN:
+
+```
+{"client_id": "XXXXXXXX-100", "secret_key": "...", "redirect_uri": "https://...", "pin": "1234"}
+```
+
+3. Run `python generate_token.py`, log in via the printed URL and paste back the redirect URL. This stores the access and refresh tokens. The bot refreshes the access token daily at 07:00 using the refresh token + PIN; the refresh token lasts 15 days, after which `generate_token.py` must be run again.
+
+4. Verify your Discord bot configuration.
 
 ### Running
 
@@ -65,6 +73,6 @@ PYTHONPATH=/path/to/trading-bot python -m strategies.golden_cross
 ### Troubleshooting
 
 - **Rate-limit errors (429)**: Reduce `max_workers` or add delays between API calls.
-- **Missing historical data**: Check Groww API credentials and network connectivity.
+- **Missing historical data**: Check Fyers API credentials and network connectivity.
 - **No alerts**: Review logs to see if the analysis detected any signals (check threshold sensitivity).
 

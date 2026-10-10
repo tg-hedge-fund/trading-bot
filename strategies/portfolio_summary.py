@@ -1,6 +1,4 @@
-import time
-
-from api_utils.groww_api_handlers import get_portfolio, stream_live_data_by_quote
+from api_utils.fyers_api_handlers import get_portfolio
 from utils.constants import MESSAGE_TYPES
 from utils.discord_bot import send_message_via_discord_bot
 
@@ -15,21 +13,18 @@ def get_portfolio_details():
     companies = {}
     if pf_summary is not None:
       total_pf_value = 0
+      # Fyers holdings already carry the last traded price ("ltp"), so no per-holding quote calls are needed
       for company in pf_summary["holdings"]:
-          current_company = company["trading_symbol"]
-          live_quote = stream_live_data_by_quote("NSE", "CASH", current_company)
-          if live_quote is not None:
-              current_stake = live_quote["last_price"] * company["quantity"]
-              invested_value = company["quantity"] * company["average_price"]
-              total_pf_value += current_stake
+          current_company = company["symbol"]
+          current_stake = company["ltp"] * company["quantity"]
+          invested_value = company["quantity"] * company["costPrice"]
+          total_pf_value += current_stake
 
-              companies[current_company] = {
-                  "Current Value": current_stake,
-                  "Invested Value": invested_value,
-                  "Absolute Returns": ((current_stake - invested_value) / invested_value) * 100,
-              }
-
-          time.sleep(1)
+          companies[current_company] = {
+              "Current Value": current_stake,
+              "Invested Value": invested_value,
+              "Absolute Returns": ((current_stake - invested_value) / invested_value) * 100,
+          }
 
       # total_pf_value is now fully summed, so compute each holding's stake in the portfolio
       for details in companies.values():

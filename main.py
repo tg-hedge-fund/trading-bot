@@ -7,7 +7,7 @@ from threading import Event
 import schedule
 import uvicorn
 
-from api_utils.groww_api_handlers import refresh_groww_credentials
+from api_utils.fyers_api_handlers import refresh_fyers_credentials
 from api_utils.wrapper_api import app
 from strategies.golden_cross import (
     get_crossover_for_all_indices,
@@ -70,7 +70,7 @@ def run_token_generator_schedule():
     try:
         token_scheduler = schedule.Scheduler()
         run_job_everyday(token_scheduler, "07:00", generate_token_every_morning)
-        run_job_everyday(token_scheduler, "07:01", refresh_groww_credentials)
+        run_job_everyday(token_scheduler, "07:01", refresh_fyers_credentials)
         while not schedule_shutdown_event.is_set():
             token_scheduler.run_pending()
             if schedule_shutdown_event.wait(5):

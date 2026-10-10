@@ -1,4 +1,4 @@
-from utils.token_generator import generate_token
+from utils.token_generator import login_with_auth_code
 
 
-generate_token()
+login_with_auth_code()

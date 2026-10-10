@@ -3,7 +3,6 @@ from time import sleep
 
 import pandas as pd
 
-from api_utils.groww_api_handlers import GROWW
 from utils.db_connector import PGConnector
 from utils.utils import logger
 

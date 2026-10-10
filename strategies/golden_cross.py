@@ -10,7 +10,7 @@ from concurrent.futures.thread import ThreadPoolExecutor
 from datetime import datetime, timedelta
 from typing import List, Optional, Tuple
 
-from api_utils.groww_api_handlers import get_historical_data, stream_live_data_by_quote
+from api_utils.fyers_api_handlers import get_historical_data, get_quote
 from trade_utils.ta_indicators import calculate_ema, calculate_ema_crossover
 from utils.constants import INDICES_LIST, MESSAGE_TYPES
 from utils.discord_bot import send_message_via_discord_bot
@@ -31,39 +31,33 @@ SUBMIT_STAGGER_SECS = 0.5  # seconds between each symbol submission to avoid API
 
 
 class GoldenCross:
-    def __init__(self, symbol: str, exchange: str, candle_interval: str, segment: str) -> None:
-        self.GROWW_SYMBOL = symbol
-        self.EXCHANGE = exchange
-        self.CANDLE_INTERVAL = candle_interval
-        self.SEGMENT = segment
+    def __init__(self, symbol: str, resolution: str) -> None:
+        self.SYMBOL = symbol
+        self.RESOLUTION = resolution
 
     def get_historical_data_populated(self) -> Optional[List[float]]:
         # compute end_time as current time minus 1 hour to align with closed candle
         end_time = datetime.now() - timedelta(hours=1)
-        end_time_formatted = end_time.strftime("%Y-%m-%d %H:%M:%S")
         start_time = end_time - timedelta(days=150) + timedelta(hours=1)
-        start_time_formatted = start_time.strftime("%Y-%m-%d %H:%M:%S")
 
-        logger.info(f"{self.GROWW_SYMBOL}: loading historical candles from {start_time_formatted} to {end_time_formatted}")
+        logger.info(f"{self.SYMBOL}: loading historical candles from {start_time:%Y-%m-%d %H:%M:%S} to {end_time:%Y-%m-%d %H:%M:%S}")
         historical_data = get_historical_data(
-            start_time=start_time_formatted,
-            end_time=end_time_formatted,
-            groww_symbol=f"{self.EXCHANGE}-{self.GROWW_SYMBOL}",
-            exchange=self.EXCHANGE,
-            segment=self.SEGMENT,
-            candle_interval=self.CANDLE_INTERVAL,
+            symbol=self.SYMBOL,
+            resolution=self.RESOLUTION,
+            range_from=start_time,
+            range_to=end_time,
         )
 
         if historical_data is None:
-            logger.error(f"{self.GROWW_SYMBOL}: historical_data is None")
+            logger.error(f"{self.SYMBOL}: historical_data is None")
             return None
 
         try:
-            # candles structure expected: [open, high, low, close, last_price?] but original code used index 4
+            # candles structure: [epoch, open, high, low, close, volume]
             closing_prices_historical_data = [float(i[4]) for i in historical_data["candles"]]
             return closing_prices_historical_data
         except Exception as e:
-            logger.error(f"{self.GROWW_SYMBOL}: error parsing historical candles: {e}", exc_info=True)
+            logger.error(f"{self.SYMBOL}: error parsing historical candles: {e}", exc_info=True)
             return None
 
     def _analyze_last_n_and_maybe_alert(self, ema_short: List[float], ema_long: List[float], price_series: List[float]) -> None:
@@ -76,7 +70,7 @@ class GoldenCross:
         crossover = calculate_ema_crossover(ema_short, ema_long)
         total = len(crossover)
         if total == 0:
-            logger.info(f"{self.GROWW_SYMBOL}: no crossover points available to analyze")
+            logger.info(f"{self.SYMBOL}: no crossover points available to analyze")
             return
 
         last_n = min(LAST_N, total)
@@ -84,7 +78,7 @@ class GoldenCross:
         # diffs = short - long
         diffs = [s - l for s, l in recent]
         if not diffs:
-            logger.info(f"{self.GROWW_SYMBOL}: insufficient diffs to analyze")
+            logger.info(f"{self.SYMBOL}: insufficient diffs to analyze")
             return
 
         last_diff = diffs[-1]
@@ -112,7 +106,7 @@ class GoldenCross:
         # Only send messages for the three reasons listed above
         if not reason:
             logger.info(
-                f"{self.GROWW_SYMBOL}: no signal (last_diff={last_diff:.6f}, threshold={abs_threshold:.6f}) on last {last_n} points"
+                f"{self.SYMBOL}: no signal (last_diff={last_diff:.6f}, threshold={abs_threshold:.6f}) on last {last_n} points"
             )
             return
 
@@ -120,16 +114,16 @@ class GoldenCross:
         if reason == "crossed":
             direction = "ABOVE" if last_diff > 0 else "BELOW"
             send_message_via_discord_bot(
-                f"50 EMA has crossed {direction} 100 EMA for {self.GROWW_SYMBOL} on {self.CANDLE_INTERVAL} chart (analyzed last {last_n} points)",
+                f"50 EMA has crossed {direction} 100 EMA for {self.SYMBOL} on {self.RESOLUTION} resolution chart (analyzed last {last_n} points)",
                 MESSAGE_TYPES.INDICES,
             )
-            logger.info(f"{self.GROWW_SYMBOL}: sent cross message ({direction})")
+            logger.info(f"{self.SYMBOL}: sent cross message ({direction})")
         elif reason == "near_convergence":
             send_message_via_discord_bot(
-                f"50 EMA is NEAR convergence with 100 EMA for {self.GROWW_SYMBOL} on {self.CANDLE_INTERVAL} chart — diff={last_diff:.6f} (threshold={abs_threshold:.6f}) (analyzed last {last_n} points)",
+                f"50 EMA is NEAR convergence with 100 EMA for {self.SYMBOL} on {self.RESOLUTION} resolution chart — diff={last_diff:.6f} (threshold={abs_threshold:.6f}) (analyzed last {last_n} points)",
                 MESSAGE_TYPES.INDICES,
             )
-            logger.info(f"{self.GROWW_SYMBOL}: sent near-convergence message (diff={last_diff:.6f})")
+            logger.info(f"{self.SYMBOL}: sent near-convergence message (diff={last_diff:.6f})")
 
     def get_live_quote_by_hour(self) -> Optional[List[float]]:
         """
@@ -138,17 +132,17 @@ class GoldenCross:
         """
         closing_prices_historical_data = self.get_historical_data_populated()
         if closing_prices_historical_data is None:
-            logger.error(f"{self.GROWW_SYMBOL}: missing historical data, aborting")
+            logger.error(f"{self.SYMBOL}: missing historical data, aborting")
             return None
 
-        data = stream_live_data_by_quote(self.EXCHANGE, self.SEGMENT, self.GROWW_SYMBOL)
+        data = get_quote(self.SYMBOL)
         if data is None:
-            logger.error(f"{self.GROWW_SYMBOL}: live quote feed is none, skipping schedule")
+            logger.error(f"{self.SYMBOL}: live quote feed is none, skipping schedule")
             return None
 
-        # Expect last_price in the quote response
+        # Expect last price ("lp") in the quote response
         try:
-            last_traded_price_data = float(data.get("last_price", closing_prices_historical_data[-1]))
+            last_traded_price_data = float(data.get("lp", closing_prices_historical_data[-1]))
         except Exception:
             # Fallback: use last historical closing price
             last_traded_price_data = float(closing_prices_historical_data[-1])
@@ -160,21 +154,21 @@ class GoldenCross:
         current_time = datetime.now().time()
         market_start = datetime.strptime("09:15", "%H:%M").time()
         market_end = datetime.strptime("15:30", "%H:%M").time()
-        logger.info(f"{self.GROWW_SYMBOL}: Current Time: {current_time}, market_start: {market_start}, market_end: {market_end}")
+        logger.info(f"{self.SYMBOL}: Current Time: {current_time}, market_start: {market_start}, market_end: {market_end}")
 
         # Compute EMAs regardless of market hours: user requested analysis of last points
         ema_50 = calculate_ema(50, ema_data)
         ema_100 = calculate_ema(100, ema_data)
 
         if not ema_50 or not ema_100:
-            logger.info(f"{self.GROWW_SYMBOL}: insufficient EMA length (ema_50={len(ema_50)}, ema_100={len(ema_100)})")
+            logger.info(f"{self.SYMBOL}: insufficient EMA length (ema_50={len(ema_50)}, ema_100={len(ema_100)})")
             return ema_data
 
         # Delegate analysis & messaging to helper that only looks at the last LAST_N points
         try:
             self._analyze_last_n_and_maybe_alert(ema_50, ema_100, ema_data)
         except Exception as e:
-            logger.error(f"{self.GROWW_SYMBOL}: error during analysis/alerting: {e}", exc_info=True)
+            logger.error(f"{self.SYMBOL}: error during analysis/alerting: {e}", exc_info=True)
 
         return ema_data
 
@@ -191,7 +185,7 @@ def get_crossover_for_all_indices(timeout_seconds: int = DEFAULT_TIMEOUT_SECS, m
         logger.info(f"Starting GoldenCross for {symbol}")
         try:
             time.sleep(SUBMIT_STAGGER_SECS)
-            gc = GoldenCross(symbol=symbol, exchange="NSE", candle_interval="1hour", segment="CASH")
+            gc = GoldenCross(symbol=symbol, resolution="60")
             return gc.get_live_quote_by_hour()
         except Exception:
             logger.exception(f"Unhandled exception while running GoldenCross for {symbol}")

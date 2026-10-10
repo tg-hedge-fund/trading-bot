@@ -11,7 +11,7 @@ python main.py
 # Strategy only
 python -m strategies.golden_cross
 
-# Generate Groww API token
+# Log in to Fyers and store access + refresh tokens (needed every 15 days)
 python generate_token.py
 
 # Install dependencies
@@ -27,7 +27,7 @@ A multi-threaded Python trading assistant that monitors Indian stock indices (NI
 ### Thread Model (`main.py`)
 
 `main.py` starts four concurrent subsystems:
-1. **Wrapper API** — FastAPI read-only proxy to the Groww API (Basic Auth, Argon2-verified)
+1. **Wrapper API** — FastAPI read-only proxy to the Fyers API (Basic Auth, Argon2-verified)
 2. **Scheduler** — Instrument sync (Sundays), token refresh (daily 07:00/07:01), Golden Cross analysis (Mon–Fri at each hour 09–15)
 3. **Discord Bot** — Async event loop with an async message queue; routes messages to different channels by type (INDICES, PORTFOLIO, LOGS, HEARTBEAT)
 4. **Heartbeat** — Pings Discord every 5 minutes
@@ -49,7 +49,7 @@ Uses `ThreadPoolExecutor` (default 5 workers) with a 20-second per-future timeou
 
 ### API Layer (`api_utils/`)
 
-- `groww_api_handlers.py` — historical candles, live quotes, portfolio calls to Groww
+- `fyers_api_handlers.py` — historical candles (auto-chunked to Fyers' 100-day intraday limit), live quotes, holdings via `fyers-apiv3`; symbols use Fyers format (`NSE:NIFTY50-INDEX`, `NSE:SBIN-EQ`)
 - `wrapper_api.py` — FastAPI proxy exposing `/api/v1/health`, `/api/v1/history`, `/api/v1/live`
 - `auth.py` — `BasicAuthHandler` using Argon2
 

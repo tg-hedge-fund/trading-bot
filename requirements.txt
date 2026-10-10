@@ -2,8 +2,7 @@ pandas
 schedule
 numpy
 cryptography
-growwapi
-pyotp
+fyers-apiv3
 psycopg2-binary
 python-dotenv
 fastapi[standard]
