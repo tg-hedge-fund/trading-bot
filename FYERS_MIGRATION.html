@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Groww → Fyers Migration</title>
+<style>
+:root {
+  --bg: #fbfaf7; --surface: #ffffff; --text: #1d1f23; --muted: #5d636e; --border: #e3e1db;
+  --accent: #2f5fd0; --groww: #00a37a; --groww-bg: #e6f6f1; --fyers: #3a5bd9; --fyers-bg: #eaeefc;
+  --warn: #9a5b00; --warn-bg: #fff4dc; --code-bg: #f3f1ec;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #15171b; --surface: #1c1f24; --text: #e7e8ea; --muted: #a1a7b1; --border: #2e323a;
+    --accent: #8aa8ff; --groww: #4fd1a5; --groww-bg: #15302a; --fyers: #93a8ff; --fyers-bg: #1f2747;
+    --warn: #f3c46b; --warn-bg: #352a12; --code-bg: #24272d;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #15171b; --surface: #1c1f24; --text: #e7e8ea; --muted: #a1a7b1; --border: #2e323a;
+  --accent: #8aa8ff; --groww: #4fd1a5; --groww-bg: #15302a; --fyers: #93a8ff; --fyers-bg: #1f2747;
+  --warn: #f3c46b; --warn-bg: #352a12; --code-bg: #24272d;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text);
+  font: 15px/1.6 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 1040px; margin: 0 auto; padding: 40px 16px 80px; }
+h1 { font-size: 30px; margin: 0 0 6px; letter-spacing: -0.01em; }
+h2 { font-size: 21px; margin: 48px 0 12px; padding-top: 8px; border-top: 1px solid var(--border); }
+h3 { font-size: 16px; margin: 24px 0 8px; }
+p, li { color: var(--text); }
+.sub { color: var(--muted); margin: 0 0 24px; }
+a { color: var(--accent); }
+code { font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; background: var(--code-bg);
+  padding: 1px 5px; border-radius: 4px; }
+pre { background: var(--code-bg); padding: 14px 16px; border-radius: 8px; overflow-x: auto; }
+pre code { background: none; padding: 0; }
+nav.toc { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 18px; }
+nav.toc ol { margin: 0; padding-left: 20px; columns: 2; column-gap: 32px; }
+@media (max-width: 640px) { nav.toc ol { columns: 1; } }
+.table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: left; vertical-align: top; padding: 9px 12px; border-bottom: 1px solid var(--border); }
+th { font-weight: 600; color: var(--muted); font-size: 12.5px; text-transform: uppercase; letter-spacing: 0.04em; }
+tr:last-child td { border-bottom: none; }
+th.groww, td.groww { background: var(--groww-bg); }
+th.fyers, td.fyers { background: var(--fyers-bg); }
+th.groww { color: var(--groww); } th.fyers { color: var(--fyers); }
+.pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 99px; }
+.pill.groww { background: var(--groww-bg); color: var(--groww); }
+.pill.fyers { background: var(--fyers-bg); color: var(--fyers); }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin: 16px 0; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; }
+.card b { display: block; font-size: 22px; }
+.card span { color: var(--muted); font-size: 13px; }
+.callout { background: var(--warn-bg); border-left: 4px solid var(--warn); border-radius: 6px; padding: 12px 16px; margin: 16px 0; }
+.callout strong { color: var(--warn); }
+ol.steps li { margin-bottom: 8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Groww → Fyers API migration</h1>
+  <p class="sub">trading-bot · branch <code>fyers-migration</code> · 10 Oct 2026</p>
+
+  <div class="cards">
+    <div class="card"><b>5</b><span>Groww API actions replaced</span></div>
+    <div class="card"><b>13</b><span>index symbols remapped</span></div>
+    <div class="card"><b>15</b><span>files changed</span></div>
+    <div class="card"><b>0</b><span>Groww SDK imports left</span></div>
+  </div>
+
+  <nav class="toc">
+    <ol>
+      <li><a href="#why">Why the SDKs could not coexist</a></li>
+      <li><a href="#groww-usage">What the bot did with the Groww API</a></li>
+      <li><a href="#compare">Groww vs Fyers, action by action</a></li>
+      <li><a href="#auth">Authentication: the biggest difference</a></li>
+      <li><a href="#symbols">Index symbol mapping</a></li>
+      <li><a href="#files">File-by-file changes</a></li>
+      <li><a href="#pending">Not migrated yet</a></li>
+      <li><a href="#setup">Setup after merging</a></li>
+    </ol>
+  </nav>
+
+  <h2 id="why">1. Why the SDKs could not coexist</h2>
+  <p><code>fyers-apiv3</code> pins exact versions of two HTTP libraries that <code>growwapi</code> needs newer versions of, so pip cannot satisfy both:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Package</th><th class="groww">growwapi 1.5.0 needs</th><th class="fyers">fyers-apiv3 pins</th></tr></thead>
+    <tbody>
+      <tr><td><code>aiohttp</code></td><td class="groww"><code>&gt;=3.11.18,&lt;4</code></td><td class="fyers"><code>==3.9.3</code></td></tr>
+      <tr><td><code>requests</code></td><td class="groww"><code>&gt;=2.32.3,&lt;3</code></td><td class="fyers"><code>==2.31.0</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>Fix: uninstall <code>growwapi</code> and drop it (and <code>pyotp</code>, only used for Groww's TOTP login) from <code>requirements.txt</code>. <code>pip check</code> is clean afterwards and <code>discord.py</code> 2.6.4 works with aiohttp 3.9.3.</p>
+
+  <h2 id="groww-usage">2. What the bot did with the Groww API</h2>
+  <p>Every Groww call went through <code>api_utils/groww_api_handlers.py</code> (now deleted) and <code>utils/token_generator.py</code>. These are all the actions the bot performed:</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th>#</th><th>Action</th><th>Groww SDK call</th><th>Used by</th><th>When</th></tr></thead>
+    <tbody>
+      <tr><td>1</td><td>Generate access token</td><td><code>GrowwAPI.get_access_token(api_key, totp)</code></td><td><code>utils/token_generator.py</code></td><td>Daily 07:00, fully headless using API key + TOTP secret from <code>~/.growwSecretKey</code></td></tr>
+      <tr><td>2</td><td>Rebuild client with new token</td><td><code>GrowwAPI(access_token)</code></td><td><code>refresh_groww_credentials()</code></td><td>Daily 07:01</td></tr>
+      <tr><td>3</td><td>Fetch historical candles</td><td><code>get_historical_candles(groww_symbol, exchange, segment, start_time, end_time, candle_interval)</code></td><td>Golden Cross strategy</td><td>Mon–Fri hourly 09:00–15:00, 150 days of <code>1hour</code> candles for each of 13 indices</td></tr>
+      <tr><td>4</td><td>Fetch live quote (LTP)</td><td><code>get_quote(exchange, segment, trading_symbol)</code> → <code>last_price</code></td><td>Golden Cross (append live price to series); Portfolio summary (once per holding)</td><td>With every Golden Cross run; daily 16:00</td></tr>
+      <tr><td>5</td><td>Fetch holdings</td><td><code>get_holdings_for_user(timeout=5)</code> → <code>trading_symbol, quantity, average_price</code></td><td>Portfolio summary, <code>trade_utils/helpers.py</code></td><td>Daily 16:00</td></tr>
+      <tr><td>–</td><td>Read-only proxy</td><td>Actions 3 and 4 behind <code>/api/v1/history</code> and <code>/api/v1/live</code></td><td><code>api_utils/wrapper_api.py</code></td><td>Thread disabled in <code>main.py</code>; endpoints return "Under development"</td></tr>
+      <tr><td>–</td><td>Instrument master</td><td>Groww CSV dumps in <code>instrument/</code> (<code>groww_symbol</code> column). <code>GROWW</code> was imported in <code>save_instruments.py</code> but never called</td><td><code>trade_utils/save_instruments.py</code></td><td>Not scheduled in <code>main.py</code></td></tr>
+    </tbody>
+  </table></div>
+  <p>The bot never placed, modified or cancelled orders through Groww. Everything was read-only.</p>
+
+  <h2 id="compare">3. Groww vs Fyers, action by action</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Aspect</th><th class="groww">Groww (before)</th><th class="fyers">Fyers (after)</th></tr></thead>
+    <tbody>
+      <tr><td>SDK / import</td><td class="groww"><code>growwapi</code> · <code>from growwapi import GrowwAPI</code></td><td class="fyers"><code>fyers-apiv3</code> · <code>from fyers_apiv3 import fyersModel</code></td></tr>
+      <tr><td>Client</td><td class="groww"><code>GrowwAPI(access_token)</code></td><td class="fyers"><code>fyersModel.FyersModel(client_id=..., token=access_token)</code>. Sends header <code>Authorization: app_id:access_token</code></td></tr>
+      <tr><td>Symbol format</td><td class="groww">Separate <code>exchange</code> + <code>segment</code> + symbol: <code>NSE</code>, <code>CASH</code>, <code>NSE-NIFTY</code></td><td class="fyers">One string with exchange and series built in: <code>NSE:NIFTY50-INDEX</code>, <code>NSE:SBIN-EQ</code></td></tr>
+      <tr><td>Historical candles</td><td class="groww"><code>get_historical_candles(...)</code>; times as <code>"YYYY-mm-dd HH:MM:SS"</code>; interval <code>"1hour"</code></td><td class="fyers"><code>FYERS.history({symbol, resolution, date_format, range_from, range_to, cont_flag})</code>; epoch seconds; resolution <code>"60"</code></td></tr>
+      <tr><td>History window limit</td><td class="groww">150 days per request was enough for the strategy</td><td class="fyers">100 days per request for minute resolutions, 366 for <code>1D/1W/1M</code>. The handler now <strong>splits the range into chunks</strong> and removes duplicate candles</td></tr>
+      <tr><td>Candle shape</td><td class="groww"><code>[ts, o, h, l, c, v]</code>, close at index 4</td><td class="fyers"><code>[epoch, o, h, l, c, v]</code>, close at index 4 (unchanged)</td></tr>
+      <tr><td>Live quote</td><td class="groww"><code>get_quote(exchange, segment, trading_symbol)["last_price"]</code></td><td class="fyers"><code>FYERS.quotes({"symbols": sym})["d"][0]["v"]["lp"]</code>; up to 50 symbols per call</td></tr>
+      <tr><td>Holdings</td><td class="groww"><code>get_holdings_for_user()["holdings"]</code> → <code>trading_symbol</code>, <code>quantity</code>, <code>average_price</code></td><td class="fyers"><code>FYERS.holdings()["holdings"]</code> → <code>symbol</code>, <code>quantity</code>, <code>costPrice</code>, <code>ltp</code>, <code>pl</code>, <code>marketVal</code>, plus an <code>overall</code> summary</td></tr>
+      <tr><td>Portfolio LTP</td><td class="groww">One <code>get_quote</code> per holding, with a 1 s sleep between calls</td><td class="fyers">Uses <code>ltp</code> already in the holdings response, so no extra calls</td></tr>
+      <tr><td>Error reporting</td><td class="groww">SDK raised exceptions</td><td class="fyers">Body has <code>{"s": "error", "code": -N, "message": ...}</code>, often without an exception. The handler checks <code>s == "ok"</code></td></tr>
+      <tr><td>Rate limits</td><td class="groww">Hit intermittently, which led to the 0.5 s submit stagger</td><td class="fyers">10/s · 200/min · 100k/day (Standard). Going over the per-minute limit more than 3× in a day <strong>blocks the user for the rest of the day</strong></td></tr>
+      <tr><td>Token lifetime</td><td class="groww">Daily, regenerated headlessly with TOTP</td><td class="fyers">Access token expires daily at 06:30. Refresh token lasts 15 days (see <a href="#auth">§4</a>)</td></tr>
+      <tr><td>Credentials file</td><td class="groww"><code>~/.growwSecretKey</code>, positional lines: api_key, totp_secret, access_token</td><td class="fyers"><code>~/.fyersSecretKey.json</code> (mode 600): client_id, secret_key, redirect_uri, pin, access_token, refresh_token</td></tr>
+      <tr><td>Instrument master</td><td class="groww">Groww CSV dumps, <code>groww_symbol</code> like <code>NSE-20MICRONS</code></td><td class="fyers">Public CSV/JSON at <code>public.fyers.in/sym_details/NSE_CM.csv</code>, ticker like <code>NSE:20MICRONS-EQ</code></td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="auth">4. Authentication: the biggest difference</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>Step</th><th class="groww">Groww</th><th class="fyers">Fyers</th></tr></thead>
+    <tbody>
+      <tr><td>Initial login</td><td class="groww">None needed: API key + TOTP secret were enough</td><td class="fyers"><code>python generate_token.py</code>: open the printed login URL, log in, paste the redirect URL back. Exchanges <code>auth_code</code> + <code>appIdHash</code> (SHA-256 of <code>app_id:app_secret</code>) for access and refresh tokens. A random <code>state</code> is sent and checked on return</td></tr>
+      <tr><td>Daily 07:00 job</td><td class="groww"><code>GrowwAPI.get_access_token(api_key, totp)</code></td><td class="fyers">POST <code>/api/v3/validate-refresh-token</code> with refresh_token + PIN</td></tr>
+      <tr><td>Daily 07:01 job</td><td class="groww"><code>refresh_groww_credentials()</code></td><td class="fyers"><code>refresh_fyers_credentials()</code> rebuilds <code>FyersModel</code></td></tr>
+      <tr><td>Manual effort</td><td class="groww">None</td><td class="fyers">Log in again every 15 days, when the refresh token expires. The bot posts a Discord LOGS alert when the refresh fails</td></tr>
+    </tbody>
+  </table></div>
+  <div class="callout">
+    <strong>Open risk: refresh tokens may already be discontinued.</strong>
+    The Fyers docs (<code>API-FYERS.HTML</code>) say <em>"Refresh token will be discontinued from 1st April"</em> and link to a "Regulatory Changes (April 2026)" page, which is not in the saved file and returns 404 from outside the docs site. If refresh tokens are gone, the 07:00 job fails every day and a manual login is needed daily. The fallback is a daily login, either manual or automated through Fyers' unofficial TOTP endpoints. Check this on the live docs before relying on the daily job.
+  </div>
+
+  <h2 id="symbols">5. Index symbol mapping</h2>
+  <p>Checked against the Fyers symbol master <code>NSE_CM.csv</code> (column 10). <code>utils/constants.py → INDICES_LIST</code> now holds the Fyers symbols directly.</p>
+  <div class="table-wrap"><table>
+    <thead><tr><th class="groww">Groww symbol</th><th>Index</th><th class="fyers">Fyers symbol</th></tr></thead>
+    <tbody>
+      <tr><td class="groww">NIFTY</td><td>NIFTY 50</td><td class="fyers">NSE:NIFTY50-INDEX</td></tr>
+      <tr><td class="groww">NIFTY100</td><td>NIFTY 100</td><td class="fyers">NSE:NIFTY100-INDEX</td></tr>
+      <tr><td class="groww">NIFTYMIDCAP</td><td>NIFTY Midcap 100</td><td class="fyers">NSE:NIFTYMIDCAP100-INDEX</td></tr>
+      <tr><td class="groww">BANKNIFTY</td><td>NIFTY Bank</td><td class="fyers">NSE:NIFTYBANK-INDEX</td></tr>
+      <tr><td class="groww">NIFTYMETAL</td><td>NIFTY Metal</td><td class="fyers">NSE:NIFTYMETAL-INDEX</td></tr>
+      <tr><td class="groww">NIFTYPHARMA</td><td>NIFTY Pharma</td><td class="fyers">NSE:NIFTYPHARMA-INDEX</td></tr>
+      <tr><td class="groww">NIFTYAUTO</td><td>NIFTY Auto</td><td class="fyers">NSE:NIFTYAUTO-INDEX</td></tr>
+      <tr><td class="groww">NIFTYFMCG</td><td>NIFTY FMCG</td><td class="fyers">NSE:NIFTYFMCG-INDEX</td></tr>
+      <tr><td class="groww">NIFTYPSUBANK</td><td>NIFTY PSU Bank</td><td class="fyers">NSE:NIFTYPSUBANK-INDEX</td></tr>
+      <tr><td class="groww">NIFTYPVTBANK</td><td>NIFTY Private Bank</td><td class="fyers">NSE:NIFTYPVTBANK-INDEX</td></tr>
+      <tr><td class="groww">FINNIFTY</td><td>NIFTY Financial Services</td><td class="fyers">NSE:FINNIFTY-INDEX</td></tr>
+      <tr><td class="groww">NIFTYREALTY</td><td>NIFTY Realty</td><td class="fyers">NSE:NIFTYREALTY-INDEX</td></tr>
+      <tr><td class="groww">NIFTYMEDIA</td><td>NIFTY Media</td><td class="fyers">NSE:NIFTYMEDIA-INDEX</td></tr>
+      <tr><td class="groww">SENSEX (commented out)</td><td>BSE Sensex</td><td class="fyers">BSE:SENSEX-INDEX (commented out)</td></tr>
+    </tbody>
+  </table></div>
+  <p>Discord alerts now show the Fyers symbol and resolution, e.g. <em>"50 EMA has crossed ABOVE 100 EMA for NSE:NIFTY50-INDEX on 60 resolution chart"</em>.</p>
+
+  <h2 id="files">6. File-by-file changes</h2>
+  <div class="table-wrap"><table>
+    <thead><tr><th>File</th><th>Change</th></tr></thead>
+    <tbody>
+      <tr><td><code>api_utils/groww_api_handlers.py</code></td><td><span class="pill groww">deleted</span></td></tr>
+      <tr><td><code>api_utils/fyers_api_handlers.py</code></td><td><span class="pill fyers">new</span> <code>get_historical_data</code> (chunked), <code>get_quote</code>, <code>get_portfolio</code>, <code>refresh_fyers_credentials</code>. Errors are posted to Discord LOGS and return <code>None</code>. The old code built <code>RuntimeError(...)</code> without raising it, so it effectively returned <code>None</code> too</td></tr>
+      <tr><td><code>utils/token_generator.py</code></td><td>Auth-code login (<code>login_with_auth_code</code>), daily refresh-token renewal (<code>generate_token</code>), <code>get_fyers_client</code></td></tr>
+      <tr><td><code>utils/app_config.py</code></td><td><code>extract_groww_keys</code>/<code>write_keys</code> → <code>read_fyers_credentials</code>/<code>write_fyers_credentials</code> (JSON, chmod 600)</td></tr>
+      <tr><td><code>strategies/golden_cross.py</code></td><td><code>GoldenCross(symbol, resolution)</code> replaces <code>(symbol, exchange, candle_interval, segment)</code>; uses <code>lp</code> for live price; resolution <code>"60"</code></td></tr>
+      <tr><td><code>strategies/portfolio_summary.py</code></td><td>Reads <code>symbol</code>/<code>costPrice</code>/<code>ltp</code> from holdings; no per-holding quote calls</td></tr>
+      <tr><td><code>trade_utils/helpers.py</code></td><td>Holdings list uses Fyers <code>symbol</code> directly</td></tr>
+      <tr><td><code>trade_utils/save_instruments.py</code></td><td>Removed unused <code>GROWW</code> import</td></tr>
+      <tr><td><code>api_utils/wrapper_api.py</code></td><td>Endpoints take <code>symbol</code>/<code>resolution</code> instead of <code>exchange</code>/<code>groww_symbol</code>/<code>segment</code> (still "Under development")</td></tr>
+      <tr><td><code>utils/constants.py</code></td><td><code>INDICES_LIST</code> → Fyers symbols</td></tr>
+      <tr><td><code>main.py</code>, <code>generate_token.py</code></td><td>Wiring for <code>refresh_fyers_credentials</code> / <code>login_with_auth_code</code></td></tr>
+      <tr><td><code>requirements.txt</code></td><td><code>growwapi</code>, <code>pyotp</code> → <code>fyers-apiv3</code></td></tr>
+      <tr><td><code>README.md</code>, <code>CLAUDE.md</code></td><td>Setup and architecture docs updated</td></tr>
+    </tbody>
+  </table></div>
+
+  <h2 id="pending">7. Not migrated yet</h2>
+  <p>These still hold Groww-shaped <em>data</em>. They don't call the Groww API, so nothing breaks at runtime:</p>
+  <ul>
+    <li><code>sql/eq.sql</code>, <code>sql/idx.sql</code>, <code>sql/watchlist.sql</code>: <code>groww_symbol</code> column. <code>sql/portfolio.sql</code>: <code>groww_locked_quantity</code>. Renaming these needs a migration on the prod database.</li>
+    <li><code>instrument/*.csv</code>: Groww instrument dumps. They could be replaced by the Fyers symbol master.</li>
+    <li><code>trade_utils/save_instruments.py</code>, <code>utils/csv_helper.py</code>, <code>trade_utils/watchlist.py</code>: read and write the columns above. The instrument sync is not scheduled in <code>main.py</code>.</li>
+  </ul>
+  <div class="callout">
+    <strong>SDK support note.</strong> Fyers documents the Python SDK as supporting Python 3.8–3.12. The venv runs Python 3.14.7. It installs and imports, and the smoke tests pass, but this combination is not officially supported.
+  </div>
+
+  <h2 id="setup">8. Setup after merging</h2>
+  <ol class="steps">
+    <li><code>pip uninstall -y growwapi pyotp &amp;&amp; pip install -r requirements.txt</code></li>
+    <li>Create an app in the Fyers API dashboard with only the permissions needed (Basic, Transactions Info, Market Data; no Order Placement).</li>
+    <li>Create <code>~/.fyersSecretKey.json</code>:
+<pre><code>{"client_id": "XXXXXXXX-100", "secret_key": "...", "redirect_uri": "https://...", "pin": "1234"}</code></pre></li>
+    <li>Run <code>python generate_token.py</code> and complete the browser login.</li>
+    <li>Start the bot: <code>python main.py</code>. Confirm the 07:00 "Fyers Access Token generated..." message in the Discord LOGS channel the next morning.</li>
+  </ol>
+  <p>Full Fyers reference: <a href="FYERS_API_REFERENCE.html">FYERS_API_REFERENCE.html</a></p>
+</main>
+</body>
+</html>

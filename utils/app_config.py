@@ -6,6 +6,7 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives import hashes
 from cryptography.hazmat.backends import default_backend
+import json
 import os
 
 logger = logging.getLogger(__name__)
@@ -179,22 +180,14 @@ def decrypt(encrypted_message):
     """Decrypt encrypted message using the default AppConfig instance."""
     return _get_app_config().decrypt(encrypted_message)
 
-def extract_groww_keys():
-    secret_file = Path.home() / ".growwSecretKey"
+FYERS_CREDENTIALS_FILE = Path.home() / ".fyersSecretKey.json"
 
-    API_KEY = ""
-    SECRET = ""
+# Expected keys: client_id, secret_key, redirect_uri, pin, access_token, refresh_token
+def read_fyers_credentials():
+    with open(FYERS_CREDENTIALS_FILE, "r") as f:
+        return json.load(f)
 
-    with open(secret_file, "r") as f:
-        lines = f.readlines()
-        API_KEY = lines[0].strip()
-        SECRET = lines[1].strip()
-
-    return API_KEY, SECRET
-
-def write_keys(api_key, secret, access_token):
-    secret_file = Path.home() / ".growwSecretKey"
-    with open(secret_file, "w") as f:
-        f.write(f"{api_key}\n{secret}\n{access_token}")
-
-
+def write_fyers_credentials(creds):
+    with open(FYERS_CREDENTIALS_FILE, "w") as f:
+        json.dump(creds, f, indent=2)
+    os.chmod(FYERS_CREDENTIALS_FILE, 0o600)

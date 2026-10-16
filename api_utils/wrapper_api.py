@@ -2,22 +2,19 @@ from dotenv import load_dotenv
 from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, status
 
 from api_utils.auth import BasicAuthHandler
-from api_utils.groww_api_handlers import get_historical_data, stream_live_data_by_quote
+from datetime import datetime
+
+from api_utils.fyers_api_handlers import get_historical_data, get_quote
 
 load_dotenv()
 
 app = FastAPI(
-    title="Groww Read-Only Data Proxy",
+    title="Fyers Read-Only Data Proxy",
     description="Internal read-only proxy for Historical and Live data",
 )
 
 # Create a router with /api/v1 prefix
 prefix_router = APIRouter(prefix="/api/v1")
-
-EXCHANGE = "NSE"
-SEGMENT = "CASH"
-CANDLE_INTERVAL = "1d"
-
 
 def verify_auth(authorization = Header(None)):
     if not authorization:
@@ -43,17 +40,15 @@ def health():
 # Protected endpoints - require basic auth
 @prefix_router.get("/history")
 def get_historical_data_proxy(
-    exchange,
-    groww_symbol,
-    segment,
-    candle_interval,
+    symbol,
+    resolution,
     start_time,
     end_time,
     # user = Depends(verify_auth),
 ):
-    # Validate exchange
-    if exchange.upper() not in ["NSE", "BSE"]:
-        return {"status": "400", "message": "Exchange must be NSE or BSE"}
+    # Validate exchange (Fyers symbols look like NSE:SBIN-EQ)
+    if symbol.split(":")[0].upper() not in ["NSE", "BSE"]:
+        return {"status": "400", "message": "Symbol must be prefixed with NSE: or BSE:"}
 
     # Validate time format
     # try:
@@ -73,12 +68,10 @@ def get_historical_data_proxy(
     try:
         return {"status": "200", "message": "Under development"}
         historical_data = get_historical_data(
-            start_time=start_time,
-            end_time=end_time,
-            groww_symbol=f"{exchange.upper()}-{groww_symbol.upper()}",
-            exchange=exchange.upper(),
-            segment=segment.upper(),
-            candle_interval=candle_interval
+            symbol=symbol.upper(),
+            resolution=resolution,
+            range_from=datetime.strptime(start_time, "%Y-%m-%d %H:%M:%S"),
+            range_to=datetime.strptime(end_time, "%Y-%m-%d %H:%M:%S"),
         )
         return historical_data
     except Exception as e:
@@ -87,18 +80,12 @@ def get_historical_data_proxy(
 
 @prefix_router.get("/live")
 def get_live_data_proxy(
-    exchange,
-    segment,
-    trading_symbol,
+    symbol,
     # user = Depends(verify_auth),
 ):
     try:
         return {"status": "200", "message": "Under development"}
-        live_data = stream_live_data_by_quote(
-            exchange=exchange,
-            segment=segment,
-            trading_symbol=trading_symbol
-        )
+        live_data = get_quote(symbol.upper())
         return live_data
     except Exception as e:
         return {"status": "500", "message": str(e)}
